@@ -664,6 +664,6 @@ addEventListener("keydown", (e) => {
 });
 
 if (isPro()) document.body.dataset.pro = "1";
-initStart();
+renderDashboard();
 
 $("#about-built").textContent = `Snapshot of ${META.total.toLocaleString()} open notices, built ${new Date(META.built_at).toLocaleString()}.`;
