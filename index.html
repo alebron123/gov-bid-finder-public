@@ -15,6 +15,7 @@
     <button role="tab" data-tab="dashboard" aria-selected="true">Dashboard</button>
     <button role="tab" data-tab="search" aria-selected="false">Search</button>
     <button role="tab" data-tab="renewals" aria-selected="false">Renewals</button>
+    <button role="tab" data-tab="plan" aria-selected="false">Business plan</button>
     <button role="tab" data-tab="about" aria-selected="false">About</button>
   </nav>
   <div class="spacer"></div>
@@ -79,6 +80,94 @@
     <div class="small muted" id="r-count"></div>
     <div class="results" id="r-list"></div>
     <div style="text-align:center;margin-top:16px"><button class="btn ghost" id="r-more" hidden>Load more</button></div>
+  </section>
+
+  <section class="panel" id="panel-plan">
+    <div class="hero" style="padding:24px 4px 12px">
+      <h1>Give away the lead. Charge for the next one.</h1>
+      <p class="lede">We email a contractor a real government contract they can bid on, free. If they want more, they pay to stay on the list.</p>
+    </div>
+
+    <div class="grid tiles" id="plan-tiles"></div>
+
+    <div class="step"><div class="step-n">1</div><div class="step-b">
+      <h2>Find the work</h2>
+      <p>Every open federal contract, every Florida state solicitation, and everything Miami-Dade County is buying, in one database that refreshes daily. It is ranked so the biggest, simplest contracts come first, because a six-person company cannot chase a hundred-page proposal.</p>
+    </div></div>
+
+    <div class="step"><div class="step-n">2</div><div class="step-b">
+      <h2>Find who should bid on it</h2>
+      <p>Federal award records say which companies have already won that exact kind of work, where they are, and how big their contracts usually are. We match each open contract to the companies who could realistically win it, then find their published email from their own website.</p>
+    </div></div>
+
+    <div class="step"><div class="step-n">3</div><div class="step-b">
+      <h2>Send the first one free</h2>
+      <p>One email. Here is a live contract in your trade, here is what it is worth, here is the link, here is when it closes. No pitch, no signup, nothing to buy. Either it is useful to them or it is not, and they can tell in ten seconds.</p>
+      <p class="muted">This is the whole acquisition strategy. We are not selling software to someone who has never heard of us. We are handing them something worth money and asking if they want more.</p>
+    </div></div>
+
+    <div class="step"><div class="step-n">4</div><div class="step-b">
+      <h2>They pay to stay on the list</h2>
+      <div class="tier">
+        <div class="card">
+          <span class="badge" style="color:var(--good)">FREE</span>
+          <h3>The first contract</h3>
+          <div class="price">$0</div>
+          <ul>
+            <li>One real, open contract in your trade, emailed to you</li>
+            <li>What it is worth and when it closes</li>
+            <li>A link straight to the official notice</li>
+            <li>No account, no card, no catch</li>
+          </ul>
+        </div>
+        <div class="card paid">
+          <span class="badge">STARTER</span>
+          <h3>Stay on the list</h3>
+          <div class="price">$99<span style="font-size:14px;font-weight:400;color:var(--text-secondary)">/month</span></div>
+          <ul>
+            <li>Every contract in your trade and your area, every month</li>
+            <li>Ranked so the winnable ones come first</li>
+            <li>Warning when a contract you could take over is about to expire</li>
+            <li>Cancel any month</li>
+          </ul>
+        </div>
+        <div class="card paid">
+          <span class="badge">DONE FOR YOU</span>
+          <h3>We write the bid</h3>
+          <div class="price">$400<span style="font-size:14px;font-weight:400;color:var(--text-secondary)">/bid</span></div>
+          <ul>
+            <li>Cover letter, technical approach, pricing sheet, checklist</li>
+            <li>Every form the notice requires, listed</li>
+            <li>You review, sign, and submit</li>
+            <li>Priced where a human consultant cannot compete</li>
+          </ul>
+        </div>
+      </div>
+      <p class="small muted" style="margin-top:12px">We charge a subscription, never a share of the contract. Federal contracts carry a clause against paying anyone a fee contingent on winning; a monthly fee for a service avoids it entirely.</p>
+    </div></div>
+
+    <div class="step"><div class="step-n">5</div><div class="step-b">
+      <h2>What the numbers have to look like</h2>
+      <div class="card" style="margin-top:10px">
+        <table class="data">
+          <thead><tr><th>Step</th><th>Rate</th><th>Count</th></tr></thead>
+          <tbody id="funnel"></tbody>
+        </table>
+        <p class="small muted" style="margin-top:12px">Assumes a 30% open rate on a cold but genuinely useful email, 6% replying, and a quarter of those subscribing. Those are assumptions, not results. The point of the first month is to replace them with real ones.</p>
+      </div>
+    </div></div>
+
+    <div class="step"><div class="step-n">6</div><div class="step-b">
+      <h2>Why this is defensible</h2>
+      <p>Federal contract data is free, so nobody can build a business on it alone. The moat is the local data: Miami-Dade County, the City of Miami, the school district, the water and sewer department. Each has its own portal and no bulk download, which is exactly why nobody aggregates them. It is tedious, and tedious is what automation is for.</p>
+      <p>The second moat is the renewal calendar. Knowing a contract expires in eight months is worth more than knowing one closes on Friday, because eight months is enough time to prepare. Nobody sells that to small contractors.</p>
+    </div></div>
+
+    <div class="step"><div class="step-n">7</div><div class="step-b">
+      <h2>Who we are competing with</h2>
+      <p>GovWin from Deltek costs about $29,000 a year and serves roughly 5,800 customers. GovSpend runs $7,300 to $24,500. GovTribe starts at $1,350. All of them are built for companies that already bid and have someone whose job is bidding.</p>
+      <p>In three months of award data, more than ten thousand different companies won federal work, and the median one took about $500,000. Hundreds of thousands more are registered and never win anything. Nobody serves them, because a $29,000 product cannot be sold to a roofer. That gap is the business.</p>
+    </div></div>
   </section>
 
   <section class="panel" id="panel-about">

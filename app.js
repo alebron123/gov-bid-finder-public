@@ -42,6 +42,7 @@ document.querySelectorAll("[role=tab]").forEach((b) => b.onclick = () => {
   if (b.dataset.tab === "dashboard") renderDashboard();
   if (b.dataset.tab === "search") runSearch(1);
   if (b.dataset.tab === "renewals") initRenewals();
+  if (b.dataset.tab === "plan") initPlan();
 });
 
 // ---- data ----
@@ -377,6 +378,40 @@ function askBuyer(r) {
     `[Your phone]`,
   ].filter((l) => l !== null).join("\n");
   window.open(gmailUrl({ to: r[F.EMAIL], su, bo }), "_blank", "noopener");
+}
+
+// ---- business plan ----
+let planDone = false;
+async function initPlan() {
+  if (planDone) return;
+  planDone = true;
+  const open = ROWS.filter((r) => r[F.DUE] >= META.today && r[F.US]);
+  const withEmail = open.filter((r) => r[F.EMAIL]).length;
+  let companies = new Set();
+  for (const k in VENDORS) for (const c of VENDORS[k]) companies.add(c[V.NAME]);
+  if (!RENEWALS.length) { try { RENEWALS = await (await fetch("./renewals.json")).json(); } catch {} }
+  const cutoff = new Date(Date.now() + 365 * 86400e3).toISOString().slice(0, 10);
+  const exp = RENEWALS.filter((r) => r[R.END] <= cutoff);
+  const expValue = exp.reduce((a, r) => a + r[R.AMT], 0);
+
+  $("#plan-tiles").innerHTML = [
+    ["Contracts we can send", open.length.toLocaleString(), "open right now, refreshed daily"],
+    ["Companies we can reach", companies.size.toLocaleString(), `across ${Object.keys(VENDORS).length} industry codes`],
+    ["Expiring within a year", usd(expValue), `${exp.length.toLocaleString()} contracts someone else holds`],
+    ["Buyers we can name", withEmail.toLocaleString(), "contracts with the officer's email"],
+  ].map(([l, v, sub]) => `<div class="card tile"><div class="label">${l}</div><div class="value" style="font-size:${String(v).length > 8 ? 30 : 44}px">${v}</div><div class="sub">${sub}</div></div>`).join("");
+
+  const sent = 1000;
+  const rows = [
+    ["Emails sent in a month", "", sent],
+    ["Opened", "30%", Math.round(sent * 0.30)],
+    ["Replied", "6%", Math.round(sent * 0.06)],
+    ["Subscribed at $99", "25% of repliers", Math.round(sent * 0.06 * 0.25)],
+  ];
+  const subs = rows[3][2];
+  $("#funnel").innerHTML = rows.map(([a, b, c]) => `<tr><td>${a}</td><td class="muted">${b}</td><td><strong>${c.toLocaleString()}</strong></td></tr>`).join("")
+    + `<tr><td><strong>Monthly recurring revenue added</strong></td><td class="muted">${subs} × $99</td><td><strong>$${(subs * 99).toLocaleString()}</strong></td></tr>`
+    + `<tr><td>After twelve months at that rate</td><td class="muted">before churn</td><td><strong>$${(subs * 12 * 99).toLocaleString()}</strong>/mo</td></tr>`;
 }
 
 // ---- renewal calendar ----
