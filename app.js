@@ -1,4 +1,4 @@
-import { hbar, vbar, line, card, fmt, usd } from "./charts.js";
+import { hbar, vbar, line, card, fmt, usd } from "./charts.js?v=2";
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -121,7 +121,23 @@ function filtered({ state, src, sa, days, q, dep, ty, us, sort }) {
       (r[F.VALUE] == null ? unscored : scored).push(r);
     }
     unscored.sort((a, b) => a[F.DUE].localeCompare(b[F.DUE]));
-    return scored.concat(unscored);
+    // A single industry code can own the whole top of the list: every high-value
+    // pharmaceutical contract scores alike, so the first ten results were all 325412
+    // and every one of them showed the same companies. Round-robin by code so the
+    // top of the list spans real industries.
+    const byCode = new Map();
+    for (const r of scored) {
+      const c = r[F.NAICS] || "?";
+      if (!byCode.has(c)) byCode.set(c, []);
+      byCode.get(c).push(r);
+    }
+    const spread = [];
+    for (let pass = 0; spread.length < scored.length; pass++) {
+      let added = 0;
+      for (const list of byCode.values()) if (list[pass]) { spread.push(list[pass]); added++; }
+      if (!added) break;
+    }
+    return spread.concat(unscored);
   }
   if (sort === "posted") return out.sort((a, b) => (b[F.POSTED] || "").localeCompare(a[F.POSTED] || ""));
   return out;
@@ -265,8 +281,7 @@ function openVendors(id) {
             : v[V.PHONE] ? `<div class="small muted" style="margin-top:4px">${esc(v[V.PHONE])} · no published email</div>` : ""}
         </div>
         <div class="acts">
-          ${v[V.EMAIL] ? "" : `<a class="btn ghost" target="_blank" rel="noopener"
-             href="https://www.google.com/search?q=${encodeURIComponent('"' + v[V.NAME] + '" ' + [v[V.CITY], v[V.STATE]].filter(Boolean).join(" ") + " contact email")}">Find contact</a>`}
+
           <button type="button" class="btn act-mail ${isContacted(v[V.NAME]) ? "ticked" : ""}" data-i="${i}">${isContacted(v[V.NAME]) ? '<span class="tick-mark">\u2713</span> emailed' : "Write email"}</button>
         </div>
       </div>`).join("")}</div>`;
@@ -326,70 +341,6 @@ function composeFor(r, v, deadline) {
   };
 }
 
-function openComposer(r, v, deadline) {
-  const who = [v[V.CITY], v[V.STATE]].filter(Boolean).join(", ");
-  const subject = `Government contract you can bid on \u2014 ${r[F.TITLE].slice(0, 60)}`;
-  const body = [
-    `Hi,`,
-    ``,
-    `Thought this might be worth a look. It closes ${deadline}.`,
-    ``,
-    r[F.TITLE],
-    r[F.LINK] || "",
-    ``,
-    `You came up in the federal award records for this kind of work, which is how I found you.`,
-    ``,
-    `Worth a conversation?`,
-    ``,
-    `[Your name]`,
-  ].filter((l) => l !== null).join("\n");
-
-  $("#dlg-title").textContent = `Email ${v[V.NAME]}`;
-  $("#dlg-meta").innerHTML = `<span class="tag">${esc(who || "location unknown")}</span><span class="tag">${v[V.AWARDS]} awards</span><span class="tag">avg ${money(v[V.AVG])}</span>`;
-  $("#dlg-body").innerHTML = `
-    <div class="mail-box">
-      <div class="small muted" style="margin-bottom:8px">Most small contractors do not publish an email address, they use a contact form or a phone number. Open their site, grab whatever they list, and paste it below.</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
-        <a class="btn ghost" target="_blank" rel="noopener" href="https://duckduckgo.com/?q=%5C${encodeURIComponent('"' + v[V.NAME] + '" ' + who)}">Their website</a>
-        <a class="btn ghost" target="_blank" rel="noopener" href="https://www.google.com/search?q=${encodeURIComponent('"' + v[V.NAME] + '" ' + who + " contact email phone")}">Contact page</a>
-        <a class="btn ghost" target="_blank" rel="noopener" href="https://www.google.com/search?q=${encodeURIComponent('"' + v[V.NAME] + '" ' + who + " phone number")}">Phone number</a>
-      </div>
-      <label>Their email</label>
-      <input class="m-to" type="email" placeholder="paste it here">
-      <label style="display:block;margin-top:12px">Subject</label><input class="m-sub" value="${esc(subject)}">
-      <label style="display:block;margin-top:10px">Message</label><textarea class="m-body" style="min-height:150px">${esc(body)}</textarea>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
-        <button class="btn m-gmail">Send in Gmail</button>
-        <button class="btn ghost m-mail">Mail app</button>
-        <button class="btn ghost m-copy">Copy</button>
-      </div>
-      <div class="small muted" style="margin-top:8px">Opens Gmail as <strong>${SEND_AS}</strong> with everything filled in. Press send.</div>
-    </div>
-    <p class="small muted" style="margin-top:14px"><button class="btn ghost m-back">Back to the list</button></p>`;
-
-  const get = () => ({
-    to: $("#dlg-body").querySelector(".m-to").value.trim(),
-    su: $("#dlg-body").querySelector(".m-sub").value,
-    bo: $("#dlg-body").querySelector(".m-body").value,
-  });
-  $("#dlg-body").querySelector(".m-gmail").onclick = (e) => {
-    window.open(gmailUrl(get()), "_blank", "noopener");
-    markContacted(v[V.NAME]);
-    const btn = e.target;
-    btn.textContent = "\u2713 Sent";
-    btn.disabled = true;
-    btn.style.background = "var(--good)";
-    setTimeout(() => { if ($("#dlg").open) openVendors(r[F.ID]); }, 750);
-  };
-  $("#dlg-body").querySelector(".m-mail").onclick = () => { const { to, su, bo } = get();
-    location.href = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(su)}&body=${encodeURIComponent(bo)}`; };
-  $("#dlg-body").querySelector(".m-copy").onclick = async (e) => { const { to, su, bo } = get();
-    await navigator.clipboard.writeText(`To: ${to}\nSubject: ${su}\n\n${bo}`);
-    e.target.textContent = "Copied"; setTimeout(() => e.target.textContent = "Copy", 1600); };
-  $("#dlg-body").querySelector(".m-back").onclick = () => openVendors(r[F.ID]);
-  $("#dlg-body").querySelector(".m-to").focus();
-}
-
 // ---- detail ----
 function openDetail(id) {
   const r = ROWS.find((x) => x[F.ID] === id);
@@ -397,7 +348,7 @@ function openDetail(id) {
   $("#dlg-title").textContent = r[F.TITLE];
   $("#dlg-meta").innerHTML = `${dueHtml(r[F.DUE])} <span class="sep">·</span> <span>${esc(agencyName(dept(r)))}</span>
     <span class="tag">${esc(type(r))}</span>${r[F.NAICS] ? `<span class="tag">NAICS ${r[F.NAICS]}</span>` : ""}
-    ${r[F.LINK] ? `<a href="${esc(r[F.LINK])}" target="_blank" rel="noopener">Open the official notice ↗</a>` : ""}`;
+    ${r[F.LINK] ? `<a class="btn ghost" style="padding:4px 10px;font-size:12px" href="${esc(r[F.LINK])}" target="_blank" rel="noopener">Open the official notice</a>` : ""}`;
   const kv = (l, v) => v ? `<dt>${l}</dt><dd>${esc(v)}</dd>` : "";
   $("#dlg-body").innerHTML = `<dl class="kv">
       ${kv("Response deadline", r[F.DUE])}
@@ -410,40 +361,13 @@ function openDetail(id) {
     </dl>
     <div class="section"><h4>Notice text</h4><div class="small" style="white-space:pre-wrap">${esc(r[F.SNIP] || "No description in the feed — the detail is in the attachments on the official notice.")}</div></div>
     ${r[F.EMAIL] ? `<div style="margin-top:16px;padding:14px;background:var(--page);border:1px solid var(--border);border-radius:8px">
-      <button class="btn" id="ask-buyer">Email the buyer</button>
-      <div class="small muted" style="margin-top:8px">Goes straight to <strong>${esc(r[F.EMAIL])}</strong>${r[F.CNAME] ? `, ${esc(r[F.CNAME])}` : ""}, the person running this contract. Opens Gmail already addressed and written. Add your name and press send.</div>
+      <button type="button" class="btn act-mail" id="ask-buyer">Email the buyer</button>
+      <div class="small muted" style="margin-top:8px">The person running this contract is <strong>${esc(r[F.CNAME] || r[F.EMAIL])}</strong> at ${esc(r[F.EMAIL])}.</div>
     </div>` : ""}
     <div class="callout small">This public page is read-only. The full app adds Claude: a plain-English explanation of this notice, a fit score against your business, and a complete drafted response package.</div>`;
   $("#dlg").showModal();
   const ask = $("#ask-buyer");
-  if (ask) ask.onclick = () => askBuyer(r);
-}
-
-// Email the contracting officer named on the notice. Their address is published on the
-// notice itself, so this is the one message that needs no lookup at all.
-function askBuyer(r) {
-  const deadline = new Date(r[F.DUE] + "T12:00:00").toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" });
-  const first = (r[F.CNAME] || "").split(/[ ,]/).filter(Boolean)[0];
-  const su = `Question on ${r[F.TITLE].slice(0, 62)}`;
-  const bo = [
-    first ? `Dear ${first},` : "Hello,",
-    ``,
-    `I am writing about "${r[F.TITLE]}", with responses due ${deadline}.`,
-    r[F.LINK] ? `Notice: ${r[F.LINK]}` : null,
-    ``,
-    `My company does this kind of work and we are considering a response. Could you confirm three things:`,
-    ``,
-    `1. Is the full solicitation package, including attachments and drawings, available to download?`,
-    `2. Is a site visit or pre-bid conference planned, and if so, when?`,
-    `3. What are the insurance and bonding requirements?`,
-    ``,
-    `Thank you for your time.`,
-    ``,
-    `[Your name]`,
-    `[Your company]`,
-    `[Your phone]`,
-  ].filter((l) => l !== null).join("\n");
-  window.open(gmailUrl({ to: r[F.EMAIL], su, bo }), "_blank", "noopener");
+  if (ask) ask.addEventListener("click", () => { markContacted("buyer:" + r[F.ID]); tick(ask); });
 }
 
 // ---- business plan ----
@@ -572,7 +496,6 @@ function openRivals(naics, incumbent) {
          <div class="rel"><b>${v[V.REL]}</b><span>fit</span></div>
          <div class="who"><strong>${esc(v[V.NAME])}</strong>
            <div class="small muted">${esc([v[V.CITY], v[V.STATE]].filter(Boolean).join(", ") || "location not listed")} \u00b7 ${v[V.AWARDS]} award${v[V.AWARDS] > 1 ? "s" : ""}, averaging ${money(v[V.AVG])} \u00b7 last ${esc(v[V.LAST] || "unknown")}</div></div>
-         <div class="acts"><a class="btn ghost" target="_blank" rel="noopener" href="https://www.google.com/search?q=${encodeURIComponent('"' + v[V.NAME] + '" ' + [v[V.CITY], v[V.STATE]].filter(Boolean).join(" ") + " contact")}">Find contact</a></div>
        </div>`).join("")}`
     : '<div class="callout">No other companies on record for this industry code.</div>';
   $("#dlg").showModal();

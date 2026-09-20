@@ -156,8 +156,6 @@ table.data td{padding:7px 8px;border-bottom:1px solid var(--grid);font-variant-n
 .mail-box textarea{min-height:190px;font-family:inherit}
 .mail-box label{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
 
-/* The send action is a button: never underline it, never colour it like a link */
-a.btn, .btn, .act-mail { text-decoration: none !important; }
-.act-mail { -webkit-appearance: none; appearance: none; font: inherit; }
-.act-mail.ticked { background: var(--good); border-color: var(--good); color: #fff; cursor: default; }
-.act-mail.ticked:hover { filter: none; }
+/* Nothing in this app is an underlined link. */
+a, a:link, a:visited, a:hover, a:active, .btn, button { text-decoration: none !important; }
+a.btn, a.btn:hover { text-decoration: none !important; }
