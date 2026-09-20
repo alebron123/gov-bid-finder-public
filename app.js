@@ -36,7 +36,13 @@ document.querySelectorAll("[role=tab]").forEach((b) => b.onclick = () => {
 });
 
 // ---- data ----
-const F = { ID: 0, TITLE: 1, DEPT: 2, TYPE: 3, SA: 4, DUE: 5, NAICS: 6, STATE: 7, CITY: 8, LINK: 9, SRC: 10, SNIP: 11, POSTED: 12, SUBTIER: 13, CONTACT: 14, SCORE: 15, SIMP: 16, VALUE: 17, BENCH: 18, US: 19 };
+const F = { ID: 0, TITLE: 1, DEPT: 2, TYPE: 3, SA: 4, DUE: 5, NAICS: 6, STATE: 7, CITY: 8, LINK: 9, SRC: 10, SNIP: 11, POSTED: 12, SUBTIER: 13, CONTACT: 14, EMAIL: 15, CNAME: 16, SCORE: 17, SIMP: 18, VALUE: 19, BENCH: 20, US: 21 };
+
+// Gmail opens in this account, so the message is already coming from the right address.
+const SEND_AS = "govbidfind@gmail.com";
+const gmailUrl = ({ to, su, bo }) =>
+  `https://mail.google.com/mail/?view=cm&fs=1&authuser=${encodeURIComponent(SEND_AS)}`
+  + `&to=${encodeURIComponent(to || "")}&su=${encodeURIComponent(su || "")}&body=${encodeURIComponent(bo || "")}`;
 const V = { NAME: 0, CITY: 1, STATE: 2, AWARDS: 3, AVG: 4, LAST: 5, REL: 6 };
 let VENDORS = {};
 let META = null, ROWS = [], HAY = [];
@@ -326,7 +332,7 @@ function openComposer(r, v, deadline) {
         <button class="btn ghost m-mail">Mail app</button>
         <button class="btn ghost m-copy">Copy</button>
       </div>
-      <div class="small muted" style="margin-top:8px">Opens your mail with everything filled in. Read it, add your name, then send. Nothing is sent from this page.</div>
+      <div class="small muted" style="margin-top:8px">Gmail opens signed in as <strong>${SEND_AS}</strong> with everything filled in. Read it, add your name, press send.</div>
     </div>
     <p class="small muted" style="margin-top:14px"><button class="btn ghost m-back">Back to the list</button></p>`;
 
@@ -336,8 +342,7 @@ function openComposer(r, v, deadline) {
     bo: $("#dlg-body").querySelector(".m-body").value,
   });
   const open = (url) => window.open(url, "_blank", "noopener");
-  $("#dlg-body").querySelector(".m-gmail").onclick = () => { const { to, su, bo } = get();
-    open(`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(su)}&body=${encodeURIComponent(bo)}`); };
+  $("#dlg-body").querySelector(".m-gmail").onclick = () => open(gmailUrl(get()));
   $("#dlg-body").querySelector(".m-outlook").onclick = () => { const { to, su, bo } = get();
     open(`https://outlook.office.com/mail/deeplink/compose?to=${encodeURIComponent(to)}&subject=${encodeURIComponent(su)}&body=${encodeURIComponent(bo)}`); };
   $("#dlg-body").querySelector(".m-mail").onclick = () => { const { to, su, bo } = get();
@@ -368,8 +373,41 @@ function openDetail(id) {
       ${kv("Source", sourceLabel(source(r)))}
     </dl>
     <div class="section"><h4>Notice text</h4><div class="small" style="white-space:pre-wrap">${esc(r[F.SNIP] || "No description in the feed — the detail is in the attachments on the official notice.")}</div></div>
+    ${r[F.EMAIL] ? `<div style="margin-top:16px;padding:14px;background:var(--page);border:1px solid var(--border);border-radius:8px">
+      <button class="btn" id="ask-buyer">Email the buyer</button>
+      <div class="small muted" style="margin-top:8px">Goes straight to <strong>${esc(r[F.EMAIL])}</strong>${r[F.CNAME] ? `, ${esc(r[F.CNAME])}` : ""}, the person running this contract. Opens Gmail already addressed and written. Add your name and press send.</div>
+    </div>` : ""}
     <div class="callout small">This public page is read-only. The full app adds Claude: a plain-English explanation of this notice, a fit score against your business, and a complete drafted response package.</div>`;
   $("#dlg").showModal();
+  const ask = $("#ask-buyer");
+  if (ask) ask.onclick = () => askBuyer(r);
+}
+
+// Email the contracting officer named on the notice. Their address is published on the
+// notice itself, so this is the one message that needs no lookup at all.
+function askBuyer(r) {
+  const deadline = new Date(r[F.DUE] + "T12:00:00").toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" });
+  const first = (r[F.CNAME] || "").split(/[ ,]/).filter(Boolean)[0];
+  const su = `Question on ${r[F.TITLE].slice(0, 62)}`;
+  const bo = [
+    first ? `Dear ${first},` : "Hello,",
+    ``,
+    `I am writing about "${r[F.TITLE]}", with responses due ${deadline}.`,
+    r[F.LINK] ? `Notice: ${r[F.LINK]}` : null,
+    ``,
+    `My company does this kind of work and we are considering a response. Could you confirm three things:`,
+    ``,
+    `1. Is the full solicitation package, including attachments and drawings, available to download?`,
+    `2. Is a site visit or pre-bid conference planned, and if so, when?`,
+    `3. What are the insurance and bonding requirements?`,
+    ``,
+    `Thank you for your time.`,
+    ``,
+    `[Your name]`,
+    `[Your company]`,
+    `[Your phone]`,
+  ].filter((l) => l !== null).join("\n");
+  window.open(gmailUrl({ to: r[F.EMAIL], su, bo }), "_blank", "noopener");
 }
 
 // ---- renewal calendar ----
