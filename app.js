@@ -257,43 +257,40 @@ function openVendors(id) {
 // mail client. A static page cannot send mail itself, so it hands off to one that can.
 function openComposer(r, v, deadline) {
   const who = [v[V.CITY], v[V.STATE]].filter(Boolean).join(", ");
-  const subject = `${r[F.TITLE].slice(0, 70)} \u2014 bids due ${r[F.DUE]}`;
+  const subject = `Government contract you can bid on \u2014 ${r[F.TITLE].slice(0, 60)}`;
   const body = [
-    `Hello,`,
+    `Hi,`,
     ``,
-    `I am writing about an open contract with the ${agencyName(dept(r))}: "${r[F.TITLE]}". Responses are due ${deadline}.`,
-    r[F.LINK] ? `The official notice is here: ${r[F.LINK]}` : null,
+    `Thought this might be worth a look. It closes ${deadline}.`,
     ``,
-    `I found ${v[V.NAME]} through public federal award records, which show ${v[V.AWARDS]} contract${v[V.AWARDS] > 1 ? "s" : ""} won in this same industry code${who ? `, out of ${who}` : ""}.`,
+    r[F.TITLE],
+    r[F.LINK] || "",
     ``,
-    `Two questions:`,
-    `1. Are you already planning to bid on this one?`,
-    `2. If not, would you consider teaming up on it?`,
+    `You came up in the federal award records for this kind of work, which is how I found you.`,
     ``,
-    `A one-line reply either way is plenty. If you would rather not hear from us again, just reply "no thanks".`,
+    `Worth a conversation?`,
     ``,
     `[Your name]`,
-    `[Your company]`,
-    `[Your phone]`,
   ].filter((l) => l !== null).join("\n");
 
   $("#dlg-title").textContent = `Email ${v[V.NAME]}`;
   $("#dlg-meta").innerHTML = `<span class="tag">${esc(who || "location unknown")}</span><span class="tag">${v[V.AWARDS]} awards</span><span class="tag">avg ${money(v[V.AVG])}</span>`;
   $("#dlg-body").innerHTML = `
     <div class="mail-box">
-      <label>To</label>
-      <input class="m-to" type="email" placeholder="their email address">
-      <div class="small muted" style="margin-top:5px">Award records do not include vendor emails.
-        <a href="https://www.google.com/search?q=${encodeURIComponent('"' + v[V.NAME] + '" ' + who + " email contact")}" target="_blank" rel="noopener">Look up ${esc(v[V.NAME])}</a>, then paste it here.</div>
-      <label style="display:block;margin-top:10px">Subject</label><input class="m-sub" value="${esc(subject)}">
-      <label style="display:block;margin-top:10px">Message</label><textarea class="m-body">${esc(body)}</textarea>
+      <label>Their email</label>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <input class="m-to" type="email" placeholder="paste it here" style="margin-top:0">
+        <a class="btn ghost" style="white-space:nowrap" target="_blank" rel="noopener"
+           href="https://www.google.com/search?q=${encodeURIComponent('"' + v[V.NAME] + '" ' + who + " email")}">Look it up</a>
+      </div>
+      <label style="display:block;margin-top:12px">Subject</label><input class="m-sub" value="${esc(subject)}">
+      <label style="display:block;margin-top:10px">Message</label><textarea class="m-body" style="min-height:150px">${esc(body)}</textarea>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
-        <button class="btn m-gmail">Open in Gmail</button>
-        <button class="btn ghost m-outlook">Outlook</button>
+        <button class="btn m-gmail">Send in Gmail</button>
         <button class="btn ghost m-mail">Mail app</button>
         <button class="btn ghost m-copy">Copy</button>
       </div>
-      <div class="small muted" style="margin-top:8px">Gmail opens signed in as <strong>${SEND_AS}</strong> with everything filled in. Read it, add your name, press send.</div>
+      <div class="small muted" style="margin-top:8px">Opens Gmail as <strong>${SEND_AS}</strong> with everything filled in. Press send.</div>
     </div>
     <p class="small muted" style="margin-top:14px"><button class="btn ghost m-back">Back to the list</button></p>`;
 
@@ -302,10 +299,7 @@ function openComposer(r, v, deadline) {
     su: $("#dlg-body").querySelector(".m-sub").value,
     bo: $("#dlg-body").querySelector(".m-body").value,
   });
-  const open = (url) => window.open(url, "_blank", "noopener");
-  $("#dlg-body").querySelector(".m-gmail").onclick = () => open(gmailUrl(get()));
-  $("#dlg-body").querySelector(".m-outlook").onclick = () => { const { to, su, bo } = get();
-    open(`https://outlook.office.com/mail/deeplink/compose?to=${encodeURIComponent(to)}&subject=${encodeURIComponent(su)}&body=${encodeURIComponent(bo)}`); };
+  $("#dlg-body").querySelector(".m-gmail").onclick = () => window.open(gmailUrl(get()), "_blank", "noopener");
   $("#dlg-body").querySelector(".m-mail").onclick = () => { const { to, su, bo } = get();
     location.href = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(su)}&body=${encodeURIComponent(bo)}`; };
   $("#dlg-body").querySelector(".m-copy").onclick = async (e) => { const { to, su, bo } = get();
