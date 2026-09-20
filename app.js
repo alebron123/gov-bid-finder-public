@@ -244,14 +244,10 @@ function jump(f) {
   runSearch(1);
 }
 
-// Remember who has already been emailed, so you can work down a list without
-// losing your place.
-const contactedKey = (name) => "c:" + String(name).toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 28);
-const contacted = new Set(JSON.parse(localStorage.getItem("contacted") || "[]"));
-function markContacted(name) {
-  contacted.add(contactedKey(name));
-  localStorage.setItem("contacted", JSON.stringify([...contacted]));
-}
+// Ticks are for this visit only. Refreshing puts every button back to normal.
+const contacted = new Set();
+const contactedKey = (name) => String(name).toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 28);
+const markContacted = (name) => contacted.add(contactedKey(name));
 const isContacted = (name) => contacted.has(contactedKey(name));
 
 // ---- companies that already win this kind of work ----
