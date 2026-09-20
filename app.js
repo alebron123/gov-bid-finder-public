@@ -6,6 +6,14 @@ const SOURCE_LABEL = { "sam.gov": "Federal (SAM.gov)", myfloridamarketplace: "Fl
 const sourceLabel = (v) => SOURCE_LABEL[v] || v;
 const NAICS_SECTOR = { 11: "Agriculture", 21: "Mining & extraction", 22: "Utilities", 23: "Construction", 31: "Manufacturing", 32: "Manufacturing", 33: "Manufacturing", 42: "Wholesale", 44: "Retail", 45: "Retail", 48: "Transportation", 49: "Warehousing", 51: "Information", 52: "Finance", 53: "Real estate & leasing", 54: "Professional & technical", 55: "Management", 56: "Admin, support & waste", 61: "Education", 62: "Health care", 71: "Arts & recreation", 72: "Food & lodging", 81: "Repair & other services", 92: "Public administration" };
 const naicsLabel = (c) => `${c} · ${NAICS_SECTOR[String(c).slice(0, 2)] || "Other"}`;
+const agencyName = (raw) => {
+  let v = String(raw || "").trim();
+  const m = v.match(/^(.*),\s*(DEPARTMENT|DEPT)\s+OF\.?$/i);
+  if (m) v = "Department of " + m[1];
+  v = v.replace(/^DEPT OF\b/i, "Department of");
+  v = v.toLowerCase().replace(/\b[a-z]/g, (c) => c.toUpperCase());
+  return v.replace(/\bOf\b/g, "of").replace(/\bAnd\b/g, "and").replace(/\bThe\b/g, "the").replace(/^of /, "Of ");
+};
 const titleCase = (s) => String(s || "").toLowerCase().replace(/\b[a-z]/g, (c) => c.toUpperCase()).replace(/\bOf\b/g, "of").replace(/\bThe\b/g, "the");
 
 const theme = localStorage.getItem("theme");
@@ -23,8 +31,8 @@ document.querySelectorAll("[role=tab]").forEach((b) => b.onclick = () => {
   document.querySelectorAll(".panel").forEach((p) => p.classList.toggle("active", p.id === "panel-" + b.dataset.tab));
   if (b.dataset.tab === "dashboard") renderDashboard();
   if (b.dataset.tab === "search") runSearch(1);
-  if (b.dataset.tab === "start") if (isPro()) document.body.dataset.pro = "1";
-initStart();
+  if (b.dataset.tab === "start") initStart();
+  if (b.dataset.tab === "renewals") initRenewals();
 });
 
 // ---- data ----
@@ -61,7 +69,7 @@ for (const sel of [$("#d-state"), $("#s-state")]) {
   for (const [v, n] of [...counts].sort()) { const o = document.createElement("option"); o.value = v; o.textContent = `${v} (${n.toLocaleString()})`; sel.appendChild(o); }
 }
 for (const sel of [$("#d-source"), $("#s-source")]) fillSelect(sel, ROWS.map(source), sourceLabel);
-fillSelect($("#s-dept"), ROWS.map(dept), titleCase);
+fillSelect($("#s-dept"), ROWS.map(dept), agencyName);
 fillSelect($("#s-type"), ROWS.map(type), (v) => v);
 
 // ---- filtering ----
@@ -132,7 +140,7 @@ function renderDashboard() {
   const wk = [...weeks].sort().slice(0, 9).map(([label, value]) => ({ label, value, short: label.slice(5).replace("-", "/"), full: "Week of " + label }));
   add("When the deadlines land", "Open notices by response week. Tall bars are crowded weeks.", (el) => vbar(el, wk));
   add("Who is buying", "Top agencies posting notices that match your filters.", (el) =>
-    hbar(el, tally(rows, dept).slice(0, 10).map((d) => ({ ...d, label: titleCase(d.label) })), { onClick: (d) => jump({ dept: tally(rows, dept).find((x) => titleCase(x.label) === d.label).label }) }));
+    hbar(el, tally(rows, dept).slice(0, 10).map((d) => ({ ...d, label: agencyName(d.label) })), { onClick: (d) => jump({ dept: tally(rows, dept).find((x) => agencyName(x.label) === d.label).label }) }));
   add("Who is allowed to bid", "Set-aside status. Anything but “Open to all” restricts bidders to certified firms.", (el) =>
     hbar(el, tally(rows, (r) => setaside(r) || "Open to all").slice(0, 8).map((d) => ({ ...d, label: d.label.replace(/\s*\(FAR[^)]*\)/, "").replace(" Set-Aside", "").replace(" Set Aside - Total", "") }))));
   add("Where the work is", "Place of performance by state.", (el) =>
@@ -164,7 +172,7 @@ function oppCard(r) {
   return `<article class="opp" data-id="${r[F.ID]}">
     ${hasVendors ? `<button class="btn find-co" data-id="${r[F.ID]}" title="Companies that already win this kind of work">Find companies<span class="pro-dot">PRO</span></button>` : ""}
     <h3>${esc(r[F.TITLE])}</h3>
-    <div class="meta">${dueHtml(r[F.DUE])} <span class="sep">·</span> <span>${esc(titleCase(dept(r)))}</span>
+    <div class="meta">${dueHtml(r[F.DUE])} <span class="sep">·</span> <span>${esc(agencyName(dept(r)))}</span>
       ${r[F.STATE] ? `<span class="sep">·</span><span>${esc([r[F.CITY], r[F.STATE]].filter(Boolean).join(", "))}</span>` : ""}
       ${sa ? `<span class="tag setaside">${esc(sa.replace(/\s*\(FAR[^)]*\)/, ""))}</span>` : ""}
       <span class="tag">${esc(type(r))}</span>
@@ -271,26 +279,72 @@ function openVendors(id) {
 
   $("#dlg-body").querySelectorAll(".act-mail").forEach((b) => b.onclick = () => {
     const v = list[Number(b.dataset.i)];
-    const subject = `Enquiry - ${r[F.TITLE].slice(0, 60)} (bids due ${r[F.DUE]})`;
-    const body = [
-      "Hello,",
-      "",
-      `I am writing about "${r[F.TITLE]}", a ${dept(r)} requirement. Responses are due ${deadline}.`,
-      r[F.LINK] ? `The notice is here: ${r[F.LINK]}` : "",
-      "",
-      `I found you through public federal award records, which show ${v[V.NAME]} has won ${v[V.AWARDS]} contract${v[V.AWARDS] > 1 ? "s" : ""} in this industry code.`,
-      "",
-      "Are you already planning to bid on this? If not, would you consider teaming on it?",
-      "",
-      "A one-line reply either way is plenty. If you would rather not hear from us, reply \"no thanks\" and we will not contact you again.",
-      "",
-      "[Your name]",
-      "[Your company]",
-      "[Your phone]",
-    ].filter((l) => l !== "").join("\n");
-    location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    openComposer(r, v, deadline);
   });
   $("#dlg").showModal();
+}
+
+// Compose panel: writes the email, then hands it to Gmail, Outlook, or the desktop
+// mail client. A static page cannot send mail itself, so it hands off to one that can.
+function openComposer(r, v, deadline) {
+  const who = [v[V.CITY], v[V.STATE]].filter(Boolean).join(", ");
+  const subject = `${r[F.TITLE].slice(0, 70)} \u2014 bids due ${r[F.DUE]}`;
+  const body = [
+    `Hello,`,
+    ``,
+    `I am writing about an open contract with the ${agencyName(dept(r))}: "${r[F.TITLE]}". Responses are due ${deadline}.`,
+    r[F.LINK] ? `The official notice is here: ${r[F.LINK]}` : null,
+    ``,
+    `I found ${v[V.NAME]} through public federal award records, which show ${v[V.AWARDS]} contract${v[V.AWARDS] > 1 ? "s" : ""} won in this same industry code${who ? `, out of ${who}` : ""}.`,
+    ``,
+    `Two questions:`,
+    `1. Are you already planning to bid on this one?`,
+    `2. If not, would you consider teaming up on it?`,
+    ``,
+    `A one-line reply either way is plenty. If you would rather not hear from us again, just reply "no thanks".`,
+    ``,
+    `[Your name]`,
+    `[Your company]`,
+    `[Your phone]`,
+  ].filter((l) => l !== null).join("\n");
+
+  $("#dlg-title").textContent = `Email ${v[V.NAME]}`;
+  $("#dlg-meta").innerHTML = `<span class="tag">${esc(who || "location unknown")}</span><span class="tag">${v[V.AWARDS]} awards</span><span class="tag">avg ${money(v[V.AVG])}</span>`;
+  $("#dlg-body").innerHTML = `
+    <div class="mail-box">
+      <label>To</label>
+      <input class="m-to" type="email" placeholder="their email address">
+      <div class="small muted" style="margin-top:5px">Award records do not include vendor emails.
+        <a href="https://www.google.com/search?q=${encodeURIComponent('"' + v[V.NAME] + '" ' + who + " email contact")}" target="_blank" rel="noopener">Look up ${esc(v[V.NAME])}</a>, then paste it here.</div>
+      <label style="display:block;margin-top:10px">Subject</label><input class="m-sub" value="${esc(subject)}">
+      <label style="display:block;margin-top:10px">Message</label><textarea class="m-body">${esc(body)}</textarea>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+        <button class="btn m-gmail">Open in Gmail</button>
+        <button class="btn ghost m-outlook">Outlook</button>
+        <button class="btn ghost m-mail">Mail app</button>
+        <button class="btn ghost m-copy">Copy</button>
+      </div>
+      <div class="small muted" style="margin-top:8px">Opens your mail with everything filled in. Read it, add your name, then send. Nothing is sent from this page.</div>
+    </div>
+    <p class="small muted" style="margin-top:14px"><button class="btn ghost m-back">Back to the list</button></p>`;
+
+  const get = () => ({
+    to: $("#dlg-body").querySelector(".m-to").value.trim(),
+    su: $("#dlg-body").querySelector(".m-sub").value,
+    bo: $("#dlg-body").querySelector(".m-body").value,
+  });
+  const open = (url) => window.open(url, "_blank", "noopener");
+  $("#dlg-body").querySelector(".m-gmail").onclick = () => { const { to, su, bo } = get();
+    open(`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(su)}&body=${encodeURIComponent(bo)}`); };
+  $("#dlg-body").querySelector(".m-outlook").onclick = () => { const { to, su, bo } = get();
+    open(`https://outlook.office.com/mail/deeplink/compose?to=${encodeURIComponent(to)}&subject=${encodeURIComponent(su)}&body=${encodeURIComponent(bo)}`); };
+  $("#dlg-body").querySelector(".m-mail").onclick = () => { const { to, su, bo } = get();
+    location.href = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(su)}&body=${encodeURIComponent(bo)}`; };
+  $("#dlg-body").querySelector(".m-copy").onclick = async (e) => { const { to, su, bo } = get();
+    await navigator.clipboard.writeText(`To: ${to}\nSubject: ${su}\n\n${bo}`);
+    e.target.textContent = "Copied"; setTimeout(() => e.target.textContent = "Copy", 1600); };
+  $("#dlg-body").querySelector(".m-back").onclick = () => openVendors(r[F.ID]);
+  $("#dlg-body").querySelector(".m-to").focus();
 }
 
 // ---- detail ----
@@ -298,7 +352,7 @@ function openDetail(id) {
   const r = ROWS.find((x) => x[F.ID] === id);
   if (!r) return;
   $("#dlg-title").textContent = r[F.TITLE];
-  $("#dlg-meta").innerHTML = `${dueHtml(r[F.DUE])} <span class="sep">·</span> <span>${esc(titleCase(dept(r)))}</span>
+  $("#dlg-meta").innerHTML = `${dueHtml(r[F.DUE])} <span class="sep">·</span> <span>${esc(agencyName(dept(r)))}</span>
     <span class="tag">${esc(type(r))}</span>${r[F.NAICS] ? `<span class="tag">NAICS ${r[F.NAICS]}</span>` : ""}
     ${r[F.LINK] ? `<a href="${esc(r[F.LINK])}" target="_blank" rel="noopener">Open the official notice ↗</a>` : ""}`;
   const kv = (l, v) => v ? `<dt>${l}</dt><dd>${esc(v)}</dd>` : "";
@@ -314,6 +368,84 @@ function openDetail(id) {
     <div class="section"><h4>Notice text</h4><div class="small" style="white-space:pre-wrap">${esc(r[F.SNIP] || "No description in the feed — the detail is in the attachments on the official notice.")}</div></div>
     <div class="callout small">This public page is read-only. The full app adds Claude: a plain-English explanation of this notice, a fit score against your business, and a complete drafted response package.</div>`;
   $("#dlg").showModal();
+}
+
+// ---- renewal calendar ----
+// Contract descriptions arrive in block capitals and run long. Sentence-case them and
+// cut to a readable length.
+const niceDesc = (v) => {
+  let t = String(v || "").trim();
+  if (!t) return "";
+  if (t === t.toUpperCase()) t = t.toLowerCase().replace(/(^|[.!?]\s+)([a-z])/g, (m, p, c) => p + c.toUpperCase());
+  if (t.length > 110) t = t.slice(0, 108).replace(/[\s,;]+\S*$/, "") + "\u2026";
+  return t.charAt(0).toUpperCase() + t.slice(1);
+};
+const R = { TRADE: 0, END: 1, AMT: 2, WHO: 3, AGENCY: 4, STATE: 5, NAICS: 6, DESC: 7, ID: 8 };
+let RENEWALS = [], rPage = 1, rHits = [];
+
+async function initRenewals() {
+  if (!RENEWALS.length) {
+    try { RENEWALS = await (await fetch("./renewals.json")).json(); }
+    catch { $("#r-list").innerHTML = '<div class="empty">Renewal data unavailable.</div>'; return; }
+    const trades = [...new Set(RENEWALS.map((r) => r[R.TRADE]))].sort();
+    for (const t of trades) { const o = document.createElement("option"); o.value = t; o.textContent = t; $("#r-trade").appendChild(o); }
+    const states = [...new Set(RENEWALS.map((r) => r[R.STATE]).filter(Boolean))].sort();
+    for (const t of states) { const o = document.createElement("option"); o.value = t; o.textContent = t; $("#r-state").appendChild(o); }
+    ["#r-trade", "#r-state", "#r-window", "#r-sort"].forEach((x) => $(x).onchange = () => renderRenewals(1));
+    $("#r-more").onclick = () => renderRenewals(rPage + 1);
+  }
+  renderRenewals(1);
+}
+
+function renderRenewals(p = 1) {
+  if (p === 1) {
+    const months = Number($("#r-window").value);
+    const cutoff = months ? new Date(Date.now() + months * 30.44 * 86400e3).toISOString().slice(0, 10) : "9999";
+    const trade = $("#r-trade").value, state = $("#r-state").value;
+    rHits = RENEWALS.filter((r) => r[R.END] <= cutoff && (!trade || r[R.TRADE] === trade) && (!state || r[R.STATE] === state));
+    rHits.sort($("#r-sort").value === "amount" ? (a, b) => b[R.AMT] - a[R.AMT] : (a, b) => a[R.END].localeCompare(b[R.END]));
+
+    const total = rHits.reduce((a, r) => a + r[R.AMT], 0);
+    const soon = rHits.filter((r) => daysLeft(r[R.END]) <= 180).length;
+    const byTrade = {};
+    for (const r of rHits) byTrade[r[R.TRADE]] = (byTrade[r[R.TRADE]] || 0) + 1;
+    const topTrade = Object.entries(byTrade).sort((a, b) => b[1] - a[1])[0];
+    $("#r-tiles").innerHTML = [
+      ["Contracts expiring", rHits.length.toLocaleString(), "currently held by someone else"],
+      ["Combined value", usd(total), "up for grabs in this window"],
+      ["Within six months", soon.toLocaleString(), "start preparing now"],
+      ["Biggest trade", topTrade ? topTrade[0] : "\u2014", topTrade ? `${topTrade[1]} contracts` : ""],
+    ].map(([l, v, sub]) => `<div class="card tile"><div class="label">${l}</div><div class="value" style="font-size:${String(v).length > 12 ? 19 : 30}px">${v}</div><div class="sub">${sub}</div></div>`).join("");
+
+    const byMonth = new Map();
+    for (const r of rHits) { const k = r[R.END].slice(0, 7); byMonth.set(k, (byMonth.get(k) || 0) + 1); }
+    const series = [...byMonth].sort().slice(0, 26).map(([label, value]) => ({ label, value, short: label.slice(5) + "/" + label.slice(2, 4), full: label }));
+    if (series.length > 1) vbar($("#r-chart"), series, { valueLabel: "contracts expiring" });
+    else $("#r-chart").innerHTML = '<div class="empty small">Not enough range to chart.</div>';
+    $("#r-list").innerHTML = "";
+  }
+  rPage = p;
+  if (!rHits.length) { $("#r-list").innerHTML = '<div class="empty">Nothing expiring in that window. Widen the filters.</div>'; $("#r-count").textContent = ""; $("#r-more").hidden = true; return; }
+  $("#r-count").textContent = `${rHits.length.toLocaleString()} contracts \u2014 showing ${Math.min(p * 25, rHits.length).toLocaleString()}`;
+  $("#r-list").insertAdjacentHTML("beforeend", rHits.slice((p - 1) * 25, p * 25).map((r) => {
+    const d = daysLeft(r[R.END]);
+    const cls = d <= 90 ? "soon" : d <= 270 ? "warn" : "";
+    const when = d <= 0 ? "today" : d === 1 ? "1 day" : d < 30 ? `${d} days`
+      : d < 60 ? "1 month" : d < 365 ? `${Math.round(d / 30)} months`
+      : d < 730 ? "about a year" : `${(d / 365).toFixed(1)} years`;
+    return `<article class="opp" style="padding-right:16px">
+      <h3>${esc(niceDesc(r[R.DESC]) || r[R.TRADE])}</h3>
+      <div class="meta">
+        <span class="due ${cls}">expires in ${when}</span> <span class="sep">\u00b7</span>
+        <span>${esc(r[R.END])}</span> <span class="sep">\u00b7</span>
+        <span class="tag">${esc(r[R.TRADE])}</span>
+        ${r[R.STATE] ? `<span class="tag">${esc(r[R.STATE])}</span>` : ""}
+        <span class="tag">${money(r[R.AMT])}</span>
+      </div>
+      <div class="small muted" style="margin-top:6px">Held today by <strong>${esc(r[R.WHO] || "unknown")}</strong> \u00b7 ${esc(r[R.AGENCY])}</div>
+    </article>`;
+  }).join(""));
+  $("#r-more").hidden = p * 25 >= rHits.length;
 }
 
 // ---- presentation mode ----

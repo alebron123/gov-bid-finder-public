@@ -15,6 +15,7 @@
     <button role="tab" data-tab="start" aria-selected="true">Start here</button>
     <button role="tab" data-tab="dashboard" aria-selected="false">Dashboard</button>
     <button role="tab" data-tab="search" aria-selected="false">Search</button>
+    <button role="tab" data-tab="renewals" aria-selected="false">Renewals</button>
     <button role="tab" data-tab="about" aria-selected="false">About</button>
   </nav>
   <div class="spacer"></div>
@@ -92,6 +93,33 @@
     <div class="small muted" id="s-count"></div>
     <div class="results" id="s-results"></div>
     <div style="text-align:center;margin-top:16px"><button class="btn ghost" id="s-more" hidden>Load more</button></div>
+  </section>
+
+  <section class="panel" id="panel-renewals">
+    <div class="hero" style="padding:22px 4px 14px">
+      <h1 style="font-size:clamp(22px,2.8vw,30px)">Contracts that are about to expire</h1>
+      <p class="lede" style="margin-bottom:16px">A bid closing on Friday is already lost. A contract ending in eight months is winnable, because eight months is enough time to prepare, meet the facilities manager, and be the obvious choice. These are federal maintenance and repair contracts with an end date on the horizon, and the company holding each one today.</p>
+    </div>
+    <div class="filters">
+      <select id="r-trade"><option value="">All trades</option></select>
+      <select id="r-state"><option value="">All states</option></select>
+      <select id="r-window">
+        <option value="6">Expiring within 6 months</option>
+        <option value="12" selected>Within 12 months</option>
+        <option value="24">Within 24 months</option>
+        <option value="0">Any time</option>
+      </select>
+      <select id="r-sort"><option value="end">Soonest expiry</option><option value="amount">Largest first</option></select>
+    </div>
+    <div class="grid tiles" id="r-tiles"></div>
+    <div class="card" style="margin-bottom:14px">
+      <p class="chart-title">When they expire</p>
+      <p class="chart-sub">Contracts ending per month. Each one is a chance to take the work off the incumbent.</p>
+      <div class="plot" id="r-chart"></div>
+    </div>
+    <div class="small muted" id="r-count"></div>
+    <div class="results" id="r-list"></div>
+    <div style="text-align:center;margin-top:16px"><button class="btn ghost" id="r-more" hidden>Load more</button></div>
   </section>
 
   <section class="panel" id="panel-about">
