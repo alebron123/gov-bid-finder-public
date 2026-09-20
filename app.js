@@ -443,9 +443,30 @@ function renderRenewals(p = 1) {
         <span class="tag">${money(r[R.AMT])}</span>
       </div>
       <div class="small muted" style="margin-top:6px">Held today by <strong>${esc(r[R.WHO] || "unknown")}</strong> \u00b7 ${esc(r[R.AGENCY])}</div>
+      ${VENDORS[r[R.NAICS]] ? `<button class="btn find-rival" data-naics="${esc(r[R.NAICS])}" data-who="${esc(r[R.WHO] || "")}" style="margin-top:10px;padding:6px 11px;font-size:12.5px">Who else could do this<span class="pro-dot">PRO</span></button>` : ""}
     </article>`;
   }).join(""));
+  $("#r-list").querySelectorAll(".find-rival").forEach((b) => b.onclick = () => openRivals(b.dataset.naics, b.dataset.who));
   $("#r-more").hidden = p * 25 >= rHits.length;
+}
+
+// Companies who could take a contract off whoever holds it now.
+function openRivals(naics, incumbent) {
+  if (!isPro()) return askForPro(() => openRivals(naics, incumbent));
+  const list = (VENDORS[naics] || []).filter((v) =>
+    !incumbent || v[V.NAME].toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20) !== incumbent.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20));
+  $("#dlg-title").textContent = "Who else could do this work";
+  $("#dlg-meta").innerHTML = `<span class="tag">NAICS ${esc(naics)}</span> ${incumbent ? `<span class="tag">held today by ${esc(incumbent.slice(0, 40))}</span>` : ""}`;
+  $("#dlg-body").innerHTML = list.length
+    ? `<p class="small muted" style="margin:0 0 14px">Companies with a federal track record in this industry code, excluding the incumbent. When the contract comes up for renewal, these are the firms who could credibly bid for it.</p>
+       ${list.slice(0, 15).map((v) => `<div class="vendor">
+         <div class="rel"><b>${v[V.REL]}</b><span>fit</span></div>
+         <div class="who"><strong>${esc(v[V.NAME])}</strong>
+           <div class="small muted">${esc([v[V.CITY], v[V.STATE]].filter(Boolean).join(", ") || "location not listed")} \u00b7 ${v[V.AWARDS]} award${v[V.AWARDS] > 1 ? "s" : ""}, averaging ${money(v[V.AVG])} \u00b7 last ${esc(v[V.LAST] || "unknown")}</div></div>
+         <div class="acts"><a class="btn ghost" target="_blank" rel="noopener" href="https://www.google.com/search?q=${encodeURIComponent('"' + v[V.NAME] + '" ' + [v[V.CITY], v[V.STATE]].filter(Boolean).join(" ") + " contact")}">Find contact</a></div>
+       </div>`).join("")}`
+    : '<div class="callout">No other companies on record for this industry code.</div>';
+  $("#dlg").showModal();
 }
 
 // ---- presentation mode ----
@@ -528,6 +549,9 @@ function showTrade(t) {
   $("#s2-list").querySelectorAll(".opp").forEach((c) => c.onclick = () => openDetail(c.dataset.id));
   $("#s2-list").querySelectorAll(".find-co").forEach((b) => b.onclick = (e) => { e.stopPropagation(); openVendors(b.dataset.id); });
 
+  // Contracts in this trade that expire soon: the pipeline behind the open bids.
+  renderTradeRenewals(t);
+
   const first = uniq[0];
   const vlist = first && VENDORS[first[F.NAICS]];
   $("#s3-card").innerHTML = vlist
@@ -545,6 +569,49 @@ function showTrade(t) {
     el.classList.add("reveal");
   }
   $("#step2").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+}
+
+// Map a demo trade to the renewal-calendar trade names.
+const TRADE_TO_RENEWAL = {
+  "Painting": ["Painting"],
+  "Landscaping": ["Landscaping & grounds"],
+  "Janitorial": ["Janitorial", "Other building services"],
+  "HVAC & plumbing": ["HVAC & plumbing"],
+  "Electrical": ["Electrical", "Security & alarm systems"],
+  "Construction": ["Commercial construction", "Roofing", "Site work & demolition"],
+  "Trucking": [],
+  "Catering": [],
+  "IT & software": [],
+  "Medical supplies": [],
+  "Security guards": ["Security & alarm systems"],
+  "Translation": [],
+};
+
+async function renderTradeRenewals(t) {
+  const host = $("#s2-renewals");
+  if (!host) return;
+  const names = TRADE_TO_RENEWAL[t.label] || [];
+  if (!names.length) { host.innerHTML = ""; return; }
+  if (!RENEWALS.length) { try { RENEWALS = await (await fetch("./renewals.json")).json(); } catch { return; } }
+  const soon = RENEWALS.filter((r) => names.includes(r[R.TRADE])).sort((a, b) => a[R.END].localeCompare(b[R.END]));
+  if (!soon.length) { host.innerHTML = ""; return; }
+  const within12 = soon.filter((r) => daysLeft(r[R.END]) <= 365);
+  const value = within12.reduce((a, r) => a + r[R.AMT], 0);
+  host.innerHTML = `
+    <div class="card" style="margin-top:12px">
+      <p class="chart-title">And here is what is coming</p>
+      <p class="chart-sub">${within12.length.toLocaleString()} ${t.label.toLowerCase()} contracts worth ${usd(value)} expire within a year. Someone else holds every one of them today. This is where you actually have time to win.</p>
+      ${soon.slice(0, 4).map((r) => {
+        const d = daysLeft(r[R.END]);
+        const when = d <= 0 ? "today" : d === 1 ? "1 day" : d < 60 ? `${d} days` : `${Math.round(d / 30)} months`;
+        return `<div class="vendor">
+          <div class="rel" style="flex-basis:76px"><b style="font-size:13px">${when}</b><span>left</span></div>
+          <div class="who"><strong>${esc(niceDesc(r[R.DESC]) || r[R.TRADE])}</strong>
+            <div class="small muted">${money(r[R.AMT])} · held by ${esc(r[R.WHO] || "unknown")} · ${esc(r[R.AGENCY])}${r[R.STATE] ? " · " + esc(r[R.STATE]) : ""}</div></div>
+        </div>`;
+      }).join("")}
+      <button class="btn ghost" style="margin-top:12px" onclick="document.querySelector('[data-tab=renewals]').click()">See the full renewal calendar</button>
+    </div>`;
 }
 
 // keyboard: / focuses search, Esc closes the dialog
