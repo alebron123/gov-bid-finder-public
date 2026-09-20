@@ -13,7 +13,6 @@
   <div class="brand"><span class="dot"></span> Gov Bid Finder</div>
   <nav class="tabs" role="tablist">
     <button role="tab" data-tab="dashboard" aria-selected="true">Dashboard</button>
-    <button role="tab" data-tab="start" aria-selected="false">Start here</button>
     <button role="tab" data-tab="search" aria-selected="false">Search</button>
     <button role="tab" data-tab="renewals" aria-selected="false">Renewals</button>
     <button role="tab" data-tab="about" aria-selected="false">About</button>
@@ -24,52 +23,11 @@
 </header>
 
 <main>
-  <section class="panel" id="panel-start">
-    <div class="hero">
-      <h1>Governments buy ordinary things. Almost nobody bids.</h1>
-      <p class="lede">Painting, landscaping, janitorial, IT support, catering. Every contract below is open right now, and most will draw a handful of bidders.</p>
-      <div class="hero-nums">
-        <div><b data-count="0" id="h-open">0</b><span>open contracts today</span></div>
-        <div><b data-count="0" id="h-week">0</b><span>closing this week</span></div>
-        <div><b data-count="0" id="h-small">0</b><span>reserved for small business</span></div>
-        <div><b id="h-money">$0</b><span>awarded in the last year</span></div>
-      </div>
-    </div>
-
-    <div class="step">
-      <div class="step-n">1</div>
-      <div class="step-b">
-        <h2>What does your business do?</h2>
-        <p class="muted small">Pick one. Everything below updates from live data.</p>
-        <div class="trades" id="trades"></div>
-      </div>
-    </div>
-
-    <div class="step" id="step2" hidden>
-      <div class="step-n">2</div>
-      <div class="step-b">
-        <h2 id="s2-title">Here is what the government is buying</h2>
-        <div class="grid tiles" id="s2-tiles"></div>
-        <div class="card" style="margin-top:12px">
-          <p class="chart-title">Best value, simplest first</p>
-          <p class="chart-sub">Ranked by typical contract size in that industry, weighted by how easy the notice is to answer.</p>
-          <div class="results" id="s2-list"></div>
-        </div>
-        <div id="s2-renewals"></div>
-      </div>
-    </div>
-
-    <div class="step" id="step3" hidden>
-      <div class="step-n">3</div>
-      <div class="step-b">
-        <h2>Who already wins this work</h2>
-        <p class="muted small">Click <strong>Find companies</strong> on any contract above. It lists firms that have actually won that kind of contract, from public award records, and drafts an email to them.</p>
-        <div class="card" id="s3-card"></div>
-      </div>
-    </div>
-  </section>
-
   <section class="panel active" id="panel-dashboard">
+    <div class="hero" style="padding:26px 4px 20px">
+      <h1>Governments buy ordinary things. Almost nobody bids.</h1>
+      <p class="lede">Painting, landscaping, janitorial, IT support, catering, repairs. Every contract below is open right now, and most will draw a handful of bidders.</p>
+    </div>
     <div class="filters">
       <select id="d-state"><option value="">All states</option></select>
       <select id="d-source"><option value="">All sources</option></select>
