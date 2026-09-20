@@ -228,6 +228,16 @@ function jump(f) {
   runSearch(1);
 }
 
+// Remember who has already been emailed, so you can work down a list without
+// losing your place.
+const contactedKey = (name) => "c:" + String(name).toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 28);
+const contacted = new Set(JSON.parse(localStorage.getItem("contacted") || "[]"));
+function markContacted(name) {
+  contacted.add(contactedKey(name));
+  localStorage.setItem("contacted", JSON.stringify([...contacted]));
+}
+const isContacted = (name) => contacted.has(contactedKey(name));
+
 // ---- companies that already win this kind of work ----
 function openVendors(id) {
   const r = ROWS.find((x) => x[F.ID] === id);
@@ -247,7 +257,7 @@ function openVendors(id) {
       <div class="vendor">
         <div class="rel"><b>${v[V.REL]}</b><span>fit</span></div>
         <div class="who">
-          <strong>${esc(v[V.NAME])}</strong>
+          <strong>${esc(v[V.NAME])}</strong>${isContacted(v[V.NAME]) ? ' <span class="sent-tick" title="You have emailed this company">✓ emailed</span>' : ""}
           <div class="small muted">${esc([v[V.CITY], v[V.STATE]].filter(Boolean).join(", ") || "location not listed")}
             · ${v[V.AWARDS]} federal award${v[V.AWARDS] > 1 ? "s" : ""} here, averaging ${money(v[V.AVG])}
             · last ${esc(v[V.LAST] || "unknown")}</div>
@@ -255,7 +265,7 @@ function openVendors(id) {
         <div class="acts">
           <a class="btn ghost" target="_blank" rel="noopener"
              href="https://www.google.com/search?q=${encodeURIComponent('"' + v[V.NAME] + '" ' + [v[V.CITY], v[V.STATE]].filter(Boolean).join(" ") + " contact")}">Find contact</a>
-          <button class="btn act-mail" data-i="${i}">Write email</button>
+          <button class="btn act-mail" data-i="${i}">${isContacted(v[V.NAME]) ? "Email again" : "Write email"}</button>
         </div>
       </div>`).join("")}</div>`;
 
@@ -314,7 +324,15 @@ function openComposer(r, v, deadline) {
     su: $("#dlg-body").querySelector(".m-sub").value,
     bo: $("#dlg-body").querySelector(".m-body").value,
   });
-  $("#dlg-body").querySelector(".m-gmail").onclick = () => window.open(gmailUrl(get()), "_blank", "noopener");
+  $("#dlg-body").querySelector(".m-gmail").onclick = (e) => {
+    window.open(gmailUrl(get()), "_blank", "noopener");
+    markContacted(v[V.NAME]);
+    const btn = e.target;
+    btn.textContent = "\u2713 Sent";
+    btn.disabled = true;
+    btn.style.background = "var(--good)";
+    setTimeout(() => { if ($("#dlg").open) openVendors(r[F.ID]); }, 750);
+  };
   $("#dlg-body").querySelector(".m-mail").onclick = () => { const { to, su, bo } = get();
     location.href = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(su)}&body=${encodeURIComponent(bo)}`; };
   $("#dlg-body").querySelector(".m-copy").onclick = async (e) => { const { to, su, bo } = get();

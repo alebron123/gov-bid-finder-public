@@ -203,3 +203,6 @@ table.data td{padding:7px 8px;border-bottom:1px solid var(--grid);font-variant-n
   .step-b p{font-size:15px}
   .tier{grid-template-columns:1fr}
 }
+
+/* Emailed marker */
+.sent-tick{font-size:11.5px;font-weight:650;color:var(--good);border:1px solid color-mix(in srgb,var(--good) 40%,transparent);border-radius:5px;padding:1px 6px;margin-left:7px;white-space:nowrap}
