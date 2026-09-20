@@ -5,6 +5,16 @@ const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<
 const SOURCE_LABEL = { "sam.gov": "Federal (SAM.gov)", myfloridamarketplace: "Florida state (MFMP)", "miami-dade": "Miami-Dade County" };
 const sourceLabel = (v) => SOURCE_LABEL[v] || v;
 const NAICS_SECTOR = { 11: "Agriculture", 21: "Mining & extraction", 22: "Utilities", 23: "Construction", 31: "Manufacturing", 32: "Manufacturing", 33: "Manufacturing", 42: "Wholesale", 44: "Retail", 45: "Retail", 48: "Transportation", 49: "Warehousing", 51: "Information", 52: "Finance", 53: "Real estate & leasing", 54: "Professional & technical", 55: "Management", 56: "Admin, support & waste", 61: "Education", 62: "Health care", 71: "Arts & recreation", 72: "Food & lodging", 81: "Repair & other services", 92: "Public administration" };
+const STATE_NAME = { AL:"Alabama", AK:"Alaska", AZ:"Arizona", AR:"Arkansas", CA:"California", CO:"Colorado",
+  CT:"Connecticut", DE:"Delaware", FL:"Florida", GA:"Georgia", HI:"Hawaii", ID:"Idaho", IL:"Illinois", IN:"Indiana",
+  IA:"Iowa", KS:"Kansas", KY:"Kentucky", LA:"Louisiana", ME:"Maine", MD:"Maryland", MA:"Massachusetts", MI:"Michigan",
+  MN:"Minnesota", MS:"Mississippi", MO:"Missouri", MT:"Montana", NE:"Nebraska", NV:"Nevada", NH:"New Hampshire",
+  NJ:"New Jersey", NM:"New Mexico", NY:"New York", NC:"North Carolina", ND:"North Dakota", OH:"Ohio", OK:"Oklahoma",
+  OR:"Oregon", PA:"Pennsylvania", RI:"Rhode Island", SC:"South Carolina", SD:"South Dakota", TN:"Tennessee", TX:"Texas",
+  UT:"Utah", VT:"Vermont", VA:"Virginia", WA:"Washington", WV:"West Virginia", WI:"Wisconsin", WY:"Wyoming",
+  DC:"Washington, D.C.", PR:"Puerto Rico", VI:"U.S. Virgin Islands", GU:"Guam", AS:"American Samoa",
+  MP:"Northern Mariana Islands", AE:"Armed Forces Europe", AP:"Armed Forces Pacific", AA:"Armed Forces Americas" };
+const stateName = (c) => STATE_NAME[c] || c;
 const naicsLabel = (c) => `${c} · ${NAICS_SECTOR[String(c).slice(0, 2)] || "Other"}`;
 const agencyName = (raw) => {
   let v = String(raw || "").trim();
@@ -71,7 +81,9 @@ function fillSelect(sel, values, label) {
 for (const sel of [$("#d-state"), $("#s-state")]) {
   const counts = new Map();
   for (const r of ROWS) if (r[F.STATE]) counts.set(r[F.STATE], (counts.get(r[F.STATE]) || 0) + 1);
-  for (const [v, n] of [...counts].sort()) { const o = document.createElement("option"); o.value = v; o.textContent = `${v} (${n.toLocaleString()})`; sel.appendChild(o); }
+  // The federal feed carries a few malformed codes ("AL-11", "AM-AG"); only list real ones.
+  const sorted = [...counts].filter(([v]) => STATE_NAME[v]).sort((a, b) => stateName(a[0]).localeCompare(stateName(b[0])));
+  for (const [v, n] of sorted) { const o = document.createElement("option"); o.value = v; o.textContent = `${stateName(v)} (${n.toLocaleString()})`; sel.appendChild(o); }
 }
 for (const sel of [$("#d-source"), $("#s-source")]) fillSelect(sel, ROWS.map(source), sourceLabel);
 fillSelect($("#s-dept"), ROWS.map(dept), agencyName);
@@ -122,7 +134,7 @@ const tally = (rows, key) => {
 // ---- dashboard ----
 function renderDashboard() {
   const rows = filtered({ state: $("#d-state").value, src: $("#d-source").value, sa: $("#d-setaside").value, days: Number($("#d-days").value) || 0 });
-  const scope = $("#d-state").value ? `in ${$("#d-state").value}` : "nationwide";
+  const scope = $("#d-state").value ? `in ${stateName($("#d-state").value)}` : "nationwide";
   const soon = rows.filter((r) => daysLeft(r[F.DUE]) <= 7).length;
   const small = rows.filter((r) => setaside(r)).length;
   const awards12 = META.awards_by_month.reduce((a, b) => a + (b.dollars || 0), 0);
@@ -386,8 +398,8 @@ async function initRenewals() {
     catch { $("#r-list").innerHTML = '<div class="empty">Renewal data unavailable.</div>'; return; }
     const trades = [...new Set(RENEWALS.map((r) => r[R.TRADE]))].sort();
     for (const t of trades) { const o = document.createElement("option"); o.value = t; o.textContent = t; $("#r-trade").appendChild(o); }
-    const states = [...new Set(RENEWALS.map((r) => r[R.STATE]).filter(Boolean))].sort();
-    for (const t of states) { const o = document.createElement("option"); o.value = t; o.textContent = t; $("#r-state").appendChild(o); }
+    const states = [...new Set(RENEWALS.map((r) => r[R.STATE]).filter((v) => v && STATE_NAME[v]))].sort((a, b) => stateName(a).localeCompare(stateName(b)));
+    for (const t of states) { const o = document.createElement("option"); o.value = t; o.textContent = stateName(t); $("#r-state").appendChild(o); }
     ["#r-trade", "#r-state", "#r-window", "#r-sort"].forEach((x) => $(x).onchange = () => renderRenewals(1));
     $("#r-more").onclick = () => renderRenewals(rPage + 1);
   }

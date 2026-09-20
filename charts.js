@@ -31,7 +31,7 @@ function hookTip(node, title, lines) {
 export function hbar(host, data, { valueLabel = "notices", max = null, onClick = null } = {}) {
   host.innerHTML = "";
   if (!data.length) { host.innerHTML = '<div class="empty small">No data for these filters.</div>'; return; }
-  const rowH = 27, gap = 2, labelW = 168, valueW = 46, w = host.clientWidth || 420;
+  const rowH = 32, gap = 2, labelW = 190, valueW = 54, w = host.clientWidth || 420;
   const plotW = Math.max(60, w - labelW - valueW);
   const h = data.length * rowH;
   const top = max ?? (Math.max(...data.map((d) => d.value)) || 1);
@@ -40,7 +40,7 @@ export function hbar(host, data, { valueLabel = "notices", max = null, onClick =
     const y = i * rowH;
     const g = el("g", { class: "bar-row", style: onClick ? "cursor:pointer" : "" }, svg);
     el("text", { x: labelW - 10, y: y + rowH / 2 + 4, "text-anchor": "end", class: "blabel" }, g).textContent =
-      d.label.length > 26 ? d.label.slice(0, 25) + "…" : d.label;
+      d.label.length > 28 ? d.label.slice(0, 27) + "…" : d.label;
     el("rect", { x: labelW, y: y + gap, width: plotW, height: rowH - gap * 2, rx: 4, class: "bar-track" }, g);
     const bw = Math.max(2, (d.value / top) * plotW);
     el("rect", { x: labelW, y: y + gap, width: bw, height: rowH - gap * 2, rx: 4, fill: "var(--series-1)", class: "bar" }, g);
@@ -55,10 +55,10 @@ export function hbar(host, data, { valueLabel = "notices", max = null, onClick =
 export function vbar(host, data, { valueLabel = "notices", onClick = null } = {}) {
   host.innerHTML = "";
   if (!data.length) { host.innerHTML = '<div class="empty small">No data for these filters.</div>'; return; }
-  const w = host.clientWidth || 420, h = 190, padL = 34, padB = 30, padT = 12;
+  const w = host.clientWidth || 420, h = 230, padL = 40, padB = 32, padT = 14;
   const plotW = w - padL - 8, plotH = h - padB - padT;
   const top = Math.max(...data.map((d) => d.value)) || 1;
-  const step = plotW / data.length, bw = Math.min(38, step - 4);
+  const step = plotW / data.length, bw = Math.min(46, step - 5);
   const svg = el("svg", { viewBox: `0 0 ${w} ${h}`, height: h, role: "img" }, host);
   for (let i = 0; i <= 3; i++) {
     const v = (top / 3) * i, y = padT + plotH - (v / top) * plotH;
@@ -82,7 +82,7 @@ export function vbar(host, data, { valueLabel = "notices", onClick = null } = {}
 export function line(host, data, { valueFmt = fmt, valueLabel = "" } = {}) {
   host.innerHTML = "";
   if (data.length < 2) { host.innerHTML = '<div class="empty small">Not enough history yet.</div>'; return; }
-  const w = host.clientWidth || 420, h = 190, padL = 44, padB = 26, padT = 12;
+  const w = host.clientWidth || 420, h = 230, padL = 52, padB = 28, padT = 14;
   const plotW = w - padL - 10, plotH = h - padB - padT;
   const top = Math.max(...data.map((d) => d.value)) || 1;
   const X = (i) => padL + (i / (data.length - 1)) * plotW;
