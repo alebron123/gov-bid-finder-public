@@ -267,13 +267,12 @@ function openVendors(id) {
         <div class="acts">
           ${v[V.EMAIL] ? "" : `<a class="btn ghost" target="_blank" rel="noopener"
              href="https://www.google.com/search?q=${encodeURIComponent('"' + v[V.NAME] + '" ' + [v[V.CITY], v[V.STATE]].filter(Boolean).join(" ") + " contact email")}">Find contact</a>`}
-          <a class="btn act-mail ${isContacted(v[V.NAME]) ? "ticked" : ""}" data-i="${i}" target="_blank" rel="noopener"
-             href="${esc(gmailUrl(composeFor(r, v, deadline)))}">${isContacted(v[V.NAME]) ? '<span class="tick-mark">\u2713</span> emailed' : v[V.EMAIL] ? "Send email" : "Write email"}</a>
+          <button type="button" class="btn act-mail ${isContacted(v[V.NAME]) ? "ticked" : ""}" data-i="${i}">${isContacted(v[V.NAME]) ? '<span class="tick-mark">\u2713</span> emailed' : "Write email"}</button>
         </div>
       </div>`).join("")}</div>`;
 
   $("#dlg-body").querySelectorAll(".act-mail").forEach((b) => b.addEventListener("click", () => {
-    // The anchor's own href opens Gmail; this only records it and shows the tick.
+    // Nothing is sent and nothing navigates. The click only marks the company and ticks.
     markContacted(list[Number(b.dataset.i)][V.NAME]);
     tick(b);
   }));

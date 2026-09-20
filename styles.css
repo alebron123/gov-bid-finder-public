@@ -155,3 +155,9 @@ table.data td{padding:7px 8px;border-bottom:1px solid var(--grid);font-variant-n
 .mail-box input,.mail-box textarea{width:100%;background:var(--surface-1);border:1px solid var(--border);border-radius:6px;padding:8px;margin-top:4px;font-size:13px}
 .mail-box textarea{min-height:190px;font-family:inherit}
 .mail-box label{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+
+/* The send action is a button: never underline it, never colour it like a link */
+a.btn, .btn, .act-mail { text-decoration: none !important; }
+.act-mail { -webkit-appearance: none; appearance: none; font: inherit; }
+.act-mail.ticked { background: var(--good); border-color: var(--good); color: #fff; cursor: default; }
+.act-mail.ticked:hover { filter: none; }
