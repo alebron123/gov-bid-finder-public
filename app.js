@@ -267,16 +267,16 @@ function openVendors(id) {
         <div class="acts">
           ${v[V.EMAIL] ? "" : `<a class="btn ghost" target="_blank" rel="noopener"
              href="https://www.google.com/search?q=${encodeURIComponent('"' + v[V.NAME] + '" ' + [v[V.CITY], v[V.STATE]].filter(Boolean).join(" ") + " contact email")}">Find contact</a>`}
-          <button class="btn act-mail ${isContacted(v[V.NAME]) ? "ticked" : ""}" data-i="${i}">${isContacted(v[V.NAME]) ? '<span class="tick-mark">\u2713</span> emailed' : v[V.EMAIL] ? "Send email" : "Write email"}</button>
+          <a class="btn act-mail ${isContacted(v[V.NAME]) ? "ticked" : ""}" data-i="${i}" target="_blank" rel="noopener"
+             href="${esc(gmailUrl(composeFor(r, v, deadline)))}">${isContacted(v[V.NAME]) ? '<span class="tick-mark">\u2713</span> emailed' : v[V.EMAIL] ? "Send email" : "Write email"}</a>
         </div>
       </div>`).join("")}</div>`;
 
-  $("#dlg-body").querySelectorAll(".act-mail").forEach((b) => b.onclick = () => {
-    const v = list[Number(b.dataset.i)];
-    openMail(gmailUrl(composeFor(r, v, deadline)));
-    markContacted(v[V.NAME]);
+  $("#dlg-body").querySelectorAll(".act-mail").forEach((b) => b.addEventListener("click", () => {
+    // The anchor's own href opens Gmail; this only records it and shows the tick.
+    markContacted(list[Number(b.dataset.i)][V.NAME]);
     tick(b);
-  });
+  }));
   $("#dlg").showModal();
 }
 
@@ -300,7 +300,6 @@ function openMail(url) {
 
 // Turn the button into a tick, briefly, then settle into "emailed".
 function tick(btn) {
-  btn.disabled = true;
   btn.classList.add("ticked");
   btn.innerHTML = '<span class="tick-mark">\u2713</span>';
   setTimeout(() => { btn.innerHTML = '<span class="tick-mark">\u2713</span> emailed'; }, 650);
