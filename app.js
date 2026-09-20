@@ -277,12 +277,14 @@ function openComposer(r, v, deadline) {
   $("#dlg-meta").innerHTML = `<span class="tag">${esc(who || "location unknown")}</span><span class="tag">${v[V.AWARDS]} awards</span><span class="tag">avg ${money(v[V.AVG])}</span>`;
   $("#dlg-body").innerHTML = `
     <div class="mail-box">
-      <label>Their email</label>
-      <div style="display:flex;gap:8px;margin-top:4px">
-        <input class="m-to" type="email" placeholder="paste it here" style="margin-top:0">
-        <a class="btn ghost" style="white-space:nowrap" target="_blank" rel="noopener"
-           href="https://www.google.com/search?q=${encodeURIComponent('"' + v[V.NAME] + '" ' + who + " email")}">Look it up</a>
+      <div class="small muted" style="margin-bottom:8px">Most small contractors do not publish an email address, they use a contact form or a phone number. Open their site, grab whatever they list, and paste it below.</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+        <a class="btn ghost" target="_blank" rel="noopener" href="https://duckduckgo.com/?q=%5C${encodeURIComponent('"' + v[V.NAME] + '" ' + who)}">Their website</a>
+        <a class="btn ghost" target="_blank" rel="noopener" href="https://www.google.com/search?q=${encodeURIComponent('"' + v[V.NAME] + '" ' + who + " contact email phone")}">Contact page</a>
+        <a class="btn ghost" target="_blank" rel="noopener" href="https://www.google.com/search?q=${encodeURIComponent('"' + v[V.NAME] + '" ' + who + " phone number")}">Phone number</a>
       </div>
+      <label>Their email</label>
+      <input class="m-to" type="email" placeholder="paste it here">
       <label style="display:block;margin-top:12px">Subject</label><input class="m-sub" value="${esc(subject)}">
       <label style="display:block;margin-top:10px">Message</label><textarea class="m-body" style="min-height:150px">${esc(body)}</textarea>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
