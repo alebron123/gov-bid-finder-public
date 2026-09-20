@@ -26,7 +26,9 @@ document.querySelectorAll("[role=tab]").forEach((b) => b.onclick = () => {
 });
 
 // ---- data ----
-const F = { ID: 0, TITLE: 1, DEPT: 2, TYPE: 3, SA: 4, DUE: 5, NAICS: 6, STATE: 7, CITY: 8, LINK: 9, SRC: 10, SNIP: 11, POSTED: 12, SUBTIER: 13, CONTACT: 14 };
+const F = { ID: 0, TITLE: 1, DEPT: 2, TYPE: 3, SA: 4, DUE: 5, NAICS: 6, STATE: 7, CITY: 8, LINK: 9, SRC: 10, SNIP: 11, POSTED: 12, SUBTIER: 13, CONTACT: 14, SCORE: 15, SIMP: 16, VALUE: 17, BENCH: 18, US: 19 };
+const V = { NAME: 0, CITY: 1, STATE: 2, AWARDS: 3, AVG: 4, LAST: 5, REL: 6 };
+let VENDORS = {};
 let META = null, ROWS = [], HAY = [];
 
 $("#pill-data").textContent = "loading…";
@@ -34,6 +36,7 @@ const res = await fetch("./data.json");
 const payload = await res.json();
 META = payload.meta; ROWS = payload.rows;
 const D = META.dicts;
+fetch("./vendors.json").then((r) => r.json()).then((v) => { VENDORS = v; }).catch(() => {});
 HAY = ROWS.map((r) => (r[F.TITLE] + " " + r[F.SNIP] + " " + D.depts[r[F.DEPT]] + " " + r[F.NAICS]).toLowerCase());
 $("#pill-data").textContent = `${META.total.toLocaleString()} open notices`;
 
@@ -60,7 +63,8 @@ fillSelect($("#s-dept"), ROWS.map(dept), titleCase);
 fillSelect($("#s-type"), ROWS.map(type), (v) => v);
 
 // ---- filtering ----
-function filtered({ state, src, sa, days, q, dep, ty }) {
+const money = (n) => !n ? "?" : n >= 1e6 ? "$" + (n / 1e6).toFixed(n >= 1e7 ? 0 : 1) + "M" : n >= 1e3 ? "$" + Math.round(n / 1e3) + "k" : "$" + Math.round(n);
+function filtered({ state, src, sa, days, q, dep, ty, us, sort }) {
   const today = new Date().toISOString().slice(0, 10);
   const cutoff = days ? new Date(Date.now() + days * 86400e3).toISOString().slice(0, 10) : null;
   const terms = (q || "").toLowerCase().split(/\s+/).filter(Boolean);
@@ -74,9 +78,22 @@ function filtered({ state, src, sa, days, q, dep, ty }) {
     if (dep && dept(r) !== dep) continue;
     if (ty && type(r) !== ty) continue;
     if (sa === "small" ? !setaside(r) : sa && setaside(r) !== sa) continue;
+    if (us && !r[F.US]) continue;
     if (terms.length) { const h = HAY[i]; if (!terms.every((t) => h.includes(t))) continue; }
     out.push(r);
   }
+  if (sort === "value") {
+    // One row per title: re-posts and amendments repeat.
+    const seen = new Set(), uniq = [];
+    for (const r of out.sort((a, b) => (b[F.SCORE] || 0) - (a[F.SCORE] || 0) || a[F.DUE].localeCompare(b[F.DUE]))) {
+      if (r[F.VALUE] == null) continue;
+      const k = r[F.TITLE];
+      if (seen.has(k)) continue;
+      seen.add(k); uniq.push(r);
+    }
+    return uniq;
+  }
+  if (sort === "posted") return out.sort((a, b) => (b[F.POSTED] || "").localeCompare(a[F.POSTED] || ""));
   return out;
 }
 const tally = (rows, key) => {
@@ -136,7 +153,14 @@ function dueHtml(d) {
 }
 function oppCard(r) {
   const sa = setaside(r);
+  const hasVendors = r[F.NAICS] && VENDORS[r[F.NAICS]];
+  const chips = r[F.SCORE] != null ? `
+      <span class="sep">·</span>
+      <span class="tag" title="Typical award in this industry code, from ${r[F.BENCH]} real awards">est. ${money(r[F.VALUE])}</span>
+      <span class="tag">${r[F.SIMP] >= 80 ? "simple" : r[F.SIMP] >= 55 ? "moderate" : "complex"}</span>
+      <span class="score" title="Value weighted by how easy it is to win"><span class="meter"><span style="width:${r[F.SCORE]}%"></span></span>${r[F.SCORE]}</span>` : "";
   return `<article class="opp" data-id="${r[F.ID]}">
+    ${hasVendors ? `<button class="btn find-co" data-id="${r[F.ID]}" title="Companies that already win this kind of work">Find companies</button>` : ""}
     <h3>${esc(r[F.TITLE])}</h3>
     <div class="meta">${dueHtml(r[F.DUE])} <span class="sep">·</span> <span>${esc(titleCase(dept(r)))}</span>
       ${r[F.STATE] ? `<span class="sep">·</span><span>${esc([r[F.CITY], r[F.STATE]].filter(Boolean).join(", "))}</span>` : ""}
@@ -144,12 +168,15 @@ function oppCard(r) {
       <span class="tag">${esc(type(r))}</span>
       ${r[F.NAICS] ? `<span class="tag">NAICS ${r[F.NAICS]}</span>` : ""}
       ${source(r) !== "sam.gov" ? `<span class="tag" style="color:var(--series-2);border-color:color-mix(in srgb,var(--series-2) 45%,transparent)">${esc(sourceLabel(source(r)))}</span>` : ""}
+      ${chips}
     </div>
     ${r[F.SNIP] ? `<div class="snippet">${esc(r[F.SNIP])}</div>` : ""}
   </article>`;
 }
 function runSearch(p = 1) {
-  if (p === 1) hits = filtered({ q: $("#s-q").value, state: $("#s-state").value, src: $("#s-source").value, dep: $("#s-dept").value, ty: $("#s-type").value, sa: $("#s-setaside").value });
+  if (p === 1) hits = filtered({ q: $("#s-q").value, state: $("#s-state").value, src: $("#s-source").value,
+    dep: $("#s-dept").value, ty: $("#s-type").value, sa: $("#s-setaside").value,
+    us: $("#s-us").checked, sort: $("#s-sort").value });
   page = p;
   const host = $("#s-results");
   if (p === 1) host.innerHTML = "";
@@ -158,16 +185,72 @@ function runSearch(p = 1) {
   $("#s-count").textContent = `${hits.length.toLocaleString()} notices — showing ${Math.min(p * 25, hits.length).toLocaleString()}`;
   host.insertAdjacentHTML("beforeend", slice.map(oppCard).join(""));
   host.querySelectorAll(".opp").forEach((c) => c.onclick = () => openDetail(c.dataset.id));
+  host.querySelectorAll(".find-co").forEach((b) => b.onclick = (e) => { e.stopPropagation(); openVendors(b.dataset.id); });
   $("#s-more").hidden = p * 25 >= hits.length;
 }
 $("#s-q").addEventListener("input", () => { clearTimeout(window._sq); window._sq = setTimeout(() => runSearch(1), 220); });
-["#s-state", "#s-source", "#s-dept", "#s-type", "#s-setaside"].forEach((s) => $(s).onchange = () => runSearch(1));
+["#s-state", "#s-source", "#s-dept", "#s-type", "#s-setaside", "#s-sort", "#s-us"].forEach((s) => $(s).onchange = () => runSearch(1));
 $("#s-more").onclick = () => runSearch(page + 1);
 function jump(f) {
   document.querySelector("[data-tab=search]").click();
   if (f.q) $("#s-q").value = f.q;
   if (f.dept) $("#s-dept").value = f.dept;
   runSearch(1);
+}
+
+// ---- companies that already win this kind of work ----
+function openVendors(id) {
+  const r = ROWS.find((x) => x[F.ID] === id);
+  if (!r) return;
+  const list = VENDORS[r[F.NAICS]] || [];
+  $("#dlg-title").textContent = r[F.TITLE];
+  $("#dlg-meta").innerHTML = `<span class="tag">NAICS ${esc(r[F.NAICS])}</span>
+    <span class="tag">typical award ${money(r[F.VALUE])}</span>
+    <span class="tag">${r[F.SIMP] >= 80 ? "simple" : r[F.SIMP] >= 55 ? "moderate" : "complex"} to pursue</span>`;
+  if (!list.length) { $("#dlg-body").innerHTML = '<div class="callout">No award history on record for this industry code.</div>'; $("#dlg").showModal(); return; }
+
+  const deadline = new Date(r[F.DUE] + "T12:00:00").toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" });
+  $("#dlg-body").innerHTML = `
+    <p class="small muted" style="margin:0 0 4px">These companies have won federal contracts under this industry code, from public award records. Ranked by fit: industry match, state, contract size, recency, and number of awards.</p>
+    <p class="small muted" style="margin:0 0 14px">Nobody here has expressed interest. This is a prospect list, not a list of willing bidders.</p>
+    <div>${list.map((v, i) => `
+      <div class="vendor">
+        <div class="rel"><b>${v[V.REL]}</b><span>fit</span></div>
+        <div class="who">
+          <strong>${esc(v[V.NAME])}</strong>
+          <div class="small muted">${esc([v[V.CITY], v[V.STATE]].filter(Boolean).join(", ") || "location not listed")}
+            · ${v[V.AWARDS]} federal award${v[V.AWARDS] > 1 ? "s" : ""} here, averaging ${money(v[V.AVG])}
+            · last ${esc(v[V.LAST] || "unknown")}</div>
+        </div>
+        <div class="acts">
+          <a class="btn ghost" target="_blank" rel="noopener"
+             href="https://www.google.com/search?q=${encodeURIComponent('"' + v[V.NAME] + '" ' + [v[V.CITY], v[V.STATE]].filter(Boolean).join(" ") + " contact")}">Find contact</a>
+          <button class="btn act-mail" data-i="${i}">Write email</button>
+        </div>
+      </div>`).join("")}</div>`;
+
+  $("#dlg-body").querySelectorAll(".act-mail").forEach((b) => b.onclick = () => {
+    const v = list[Number(b.dataset.i)];
+    const subject = `Enquiry - ${r[F.TITLE].slice(0, 60)} (bids due ${r[F.DUE]})`;
+    const body = [
+      "Hello,",
+      "",
+      `I am writing about "${r[F.TITLE]}", a ${dept(r)} requirement. Responses are due ${deadline}.`,
+      r[F.LINK] ? `The notice is here: ${r[F.LINK]}` : "",
+      "",
+      `I found you through public federal award records, which show ${v[V.NAME]} has won ${v[V.AWARDS]} contract${v[V.AWARDS] > 1 ? "s" : ""} in this industry code.`,
+      "",
+      "Are you already planning to bid on this? If not, would you consider teaming on it?",
+      "",
+      "A one-line reply either way is plenty. If you would rather not hear from us, reply \"no thanks\" and we will not contact you again.",
+      "",
+      "[Your name]",
+      "[Your company]",
+      "[Your phone]",
+    ].filter((l) => l !== "").join("\n");
+    location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  });
+  $("#dlg").showModal();
 }
 
 // ---- detail ----
