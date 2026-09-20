@@ -23,7 +23,8 @@ document.querySelectorAll("[role=tab]").forEach((b) => b.onclick = () => {
   document.querySelectorAll(".panel").forEach((p) => p.classList.toggle("active", p.id === "panel-" + b.dataset.tab));
   if (b.dataset.tab === "dashboard") renderDashboard();
   if (b.dataset.tab === "search") runSearch(1);
-  if (b.dataset.tab === "start") initStart();
+  if (b.dataset.tab === "start") if (isPro()) document.body.dataset.pro = "1";
+initStart();
 });
 
 // ---- data ----
@@ -161,7 +162,7 @@ function oppCard(r) {
       <span class="tag">${r[F.SIMP] >= 80 ? "simple" : r[F.SIMP] >= 55 ? "moderate" : "complex"}</span>
       <span class="score" title="Value weighted by how easy it is to win"><span class="meter"><span style="width:${r[F.SCORE]}%"></span></span>${r[F.SCORE]}</span>` : "";
   return `<article class="opp" data-id="${r[F.ID]}">
-    ${hasVendors ? `<button class="btn find-co" data-id="${r[F.ID]}" title="Companies that already win this kind of work">Find companies</button>` : ""}
+    ${hasVendors ? `<button class="btn find-co" data-id="${r[F.ID]}" title="Companies that already win this kind of work">Find companies<span class="pro-dot">PRO</span></button>` : ""}
     <h3>${esc(r[F.TITLE])}</h3>
     <div class="meta">${dueHtml(r[F.DUE])} <span class="sep">·</span> <span>${esc(titleCase(dept(r)))}</span>
       ${r[F.STATE] ? `<span class="sep">·</span><span>${esc([r[F.CITY], r[F.STATE]].filter(Boolean).join(", "))}</span>` : ""}
@@ -199,8 +200,46 @@ function jump(f) {
   runSearch(1);
 }
 
+// ---- Pro tier gate ----
+// Demo-grade only: this is a static site, so the check runs in the browser and the
+// code is readable in the source. It shows the tier split; it is not security.
+const PRO_CODE = "bidfinder";
+const isPro = () => localStorage.getItem("pro") === "1";
+
+function askForPro(then) {
+  $("#dlg-title").textContent = "Pro feature";
+  $("#dlg-meta").innerHTML = '<span class="tag" style="color:var(--series-2);border-color:color-mix(in srgb,var(--series-2) 45%,transparent)">Pro</span>';
+  $("#dlg-body").innerHTML = `
+    <p style="margin:0 0 6px"><strong>Find the companies who already win this work.</strong></p>
+    <p class="small muted" style="margin:0 0 16px">Every contract gets a ranked list of firms that have actually won that kind of work, built from public federal award records, with a drafted outreach email for each one. Searching contracts stays free forever. This part is the paid tier.</p>
+    <div class="mail-box">
+      <label>Access code</label>
+      <input class="pro-code" type="password" placeholder="enter your code" autocomplete="off">
+      <div style="display:flex;gap:8px;align-items:center;margin-top:10px">
+        <button class="btn pro-go">Unlock</button>
+        <span class="small muted pro-msg"></span>
+      </div>
+    </div>`;
+  $("#dlg").showModal();
+  const input = $("#dlg-body").querySelector(".pro-code");
+  const submit = () => {
+    if (input.value.trim().toLowerCase() === PRO_CODE) {
+      localStorage.setItem("pro", "1");
+      document.body.dataset.pro = "1";
+      $("#dlg").close();
+      then();
+    } else {
+      $("#dlg-body").querySelector(".pro-msg").textContent = "That code is not right.";
+    }
+  };
+  $("#dlg-body").querySelector(".pro-go").onclick = submit;
+  input.onkeydown = (e) => { if (e.key === "Enter") submit(); };
+  input.focus();
+}
+
 // ---- companies that already win this kind of work ----
 function openVendors(id) {
+  if (!isPro()) return askForPro(() => openVendors(id));
   const r = ROWS.find((x) => x[F.ID] === id);
   if (!r) return;
   const list = VENDORS[r[F.NAICS]] || [];
@@ -385,6 +424,7 @@ addEventListener("keydown", (e) => {
   }
 });
 
+if (isPro()) document.body.dataset.pro = "1";
 initStart();
 
 $("#about-built").textContent = `Snapshot of ${META.total.toLocaleString()} open notices, built ${new Date(META.built_at).toLocaleString()}.`;
