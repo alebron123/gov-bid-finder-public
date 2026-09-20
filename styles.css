@@ -155,3 +155,26 @@ table.data td{padding:7px 8px;border-bottom:1px solid var(--grid);font-variant-n
 .mail-box input,.mail-box textarea{width:100%;background:var(--surface-1);border:1px solid var(--border);border-radius:6px;padding:8px;margin-top:4px;font-size:13px}
 .mail-box textarea{min-height:190px;font-family:inherit}
 .mail-box label{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+
+/* ---- Presentation mode ---- */
+.hero{padding:34px 4px 26px;max-width:860px}
+.hero h1{font-size:clamp(26px,3.6vw,40px);line-height:1.12;letter-spacing:-0.025em;margin:0 0 12px;font-weight:660}
+.hero .lede{font-size:16px;color:var(--text-secondary);margin:0 0 24px;max-width:640px;line-height:1.55}
+.hero-nums{display:flex;gap:34px;flex-wrap:wrap}
+.hero-nums div{display:flex;flex-direction:column}
+.hero-nums b{font-size:30px;font-weight:650;letter-spacing:-0.02em;line-height:1.1;font-variant-numeric:tabular-nums}
+.hero-nums span{font-size:12.5px;color:var(--muted);margin-top:2px}
+.step{display:flex;gap:16px;padding:22px 0;border-top:1px solid var(--border)}
+.step-n{flex:0 0 30px;height:30px;border-radius:50%;background:var(--series-1);color:#fff;display:grid;place-items:center;font-weight:650;font-size:14px;margin-top:2px}
+.step-b{flex:1;min-width:0}
+.step-b h2{font-size:19px;margin:0 0 4px;letter-spacing:-0.015em}
+.trades{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.trade{background:var(--surface-1);border:1px solid var(--border);border-radius:999px;padding:9px 16px;cursor:pointer;font-size:13.5px;transition:all .14s;color:var(--text-primary)}
+.trade:hover{border-color:var(--series-1);transform:translateY(-1px)}
+.trade[aria-pressed="true"]{background:var(--series-1);border-color:var(--series-1);color:#fff;font-weight:560}
+.trade .n{opacity:.62;margin-left:6px;font-variant-numeric:tabular-nums}
+.step[hidden]{display:none}
+.reveal{animation:rise .34s cubic-bezier(.2,.7,.3,1) both}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.reveal{animation:none}.trade:hover{transform:none}}
+.kbd{border:1px solid var(--border);border-bottom-width:2px;border-radius:5px;padding:1px 5px;font-size:11px;color:var(--muted);font-family:ui-monospace,monospace}
