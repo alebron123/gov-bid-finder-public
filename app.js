@@ -273,7 +273,7 @@ function openVendors(id) {
 
   $("#dlg-body").querySelectorAll(".act-mail").forEach((b) => b.onclick = () => {
     const v = list[Number(b.dataset.i)];
-    window.open(gmailUrl(composeFor(r, v, deadline)), "_blank", "noopener");
+    openMail(gmailUrl(composeFor(r, v, deadline)));
     markContacted(v[V.NAME]);
     tick(b);
   });
@@ -282,6 +282,22 @@ function openVendors(id) {
 
 // Compose panel: writes the email, then hands it to Gmail, Outlook, or the desktop
 // mail client. A static page cannot send mail itself, so it hands off to one that can.
+// Browsers block window.open in plenty of situations (popup blockers, in-app
+// browsers, iOS). If the new tab does not open, go to Gmail in this tab instead
+// so the click always does something.
+function openMail(url) {
+  let w = null;
+  try { w = window.open(url, "_blank", "noopener"); } catch { w = null; }
+  if (!w || w.closed || typeof w.closed === "undefined") {
+    const a = document.createElement("a");
+    a.href = url; a.target = "_blank"; a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => { if (!document.hidden) location.href = url; }, 400);
+  }
+}
+
 // Turn the button into a tick, briefly, then settle into "emailed".
 function tick(btn) {
   btn.disabled = true;
