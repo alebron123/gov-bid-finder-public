@@ -2,7 +2,7 @@ import { hbar, vbar, line, card, fmt, usd } from "./charts.js";
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-const SOURCE_LABEL = { "sam.gov": "Federal (SAM.gov)", myfloridamarketplace: "Florida state (MFMP)" };
+const SOURCE_LABEL = { "sam.gov": "Federal (SAM.gov)", myfloridamarketplace: "Florida state (MFMP)", "miami-dade": "Miami-Dade County" };
 const sourceLabel = (v) => SOURCE_LABEL[v] || v;
 const NAICS_SECTOR = { 11: "Agriculture", 21: "Mining & extraction", 22: "Utilities", 23: "Construction", 31: "Manufacturing", 32: "Manufacturing", 33: "Manufacturing", 42: "Wholesale", 44: "Retail", 45: "Retail", 48: "Transportation", 49: "Warehousing", 51: "Information", 52: "Finance", 53: "Real estate & leasing", 54: "Professional & technical", 55: "Management", 56: "Admin, support & waste", 61: "Education", 62: "Health care", 71: "Arts & recreation", 72: "Food & lodging", 81: "Repair & other services", 92: "Public administration" };
 const naicsLabel = (c) => `${c} · ${NAICS_SECTOR[String(c).slice(0, 2)] || "Other"}`;
@@ -93,15 +93,17 @@ function filtered({ state, src, sa, days, q, dep, ty, us, sort }) {
     out.push(r);
   }
   if (sort === "value") {
-    // One row per title: re-posts and amendments repeat.
-    const seen = new Set(), uniq = [];
+    // One row per title: re-posts and amendments repeat. Notices with no industry code
+    // carry no value estimate; they sort to the end rather than disappearing.
+    const seen = new Set(), scored = [], unscored = [];
     for (const r of out.sort((a, b) => (b[F.SCORE] || 0) - (a[F.SCORE] || 0) || a[F.DUE].localeCompare(b[F.DUE]))) {
-      if (r[F.VALUE] == null) continue;
       const k = r[F.TITLE];
       if (seen.has(k)) continue;
-      seen.add(k); uniq.push(r);
+      seen.add(k);
+      (r[F.VALUE] == null ? unscored : scored).push(r);
     }
-    return uniq;
+    unscored.sort((a, b) => a[F.DUE].localeCompare(b[F.DUE]));
+    return scored.concat(unscored);
   }
   if (sort === "posted") return out.sort((a, b) => (b[F.POSTED] || "").localeCompare(a[F.POSTED] || ""));
   return out;
