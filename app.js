@@ -53,7 +53,7 @@ const SEND_AS = "govbidfind@gmail.com";
 const gmailUrl = ({ to, su, bo }) =>
   `https://mail.google.com/mail/?view=cm&fs=1&authuser=${encodeURIComponent(SEND_AS)}`
   + `&to=${encodeURIComponent(to || "")}&su=${encodeURIComponent(su || "")}&body=${encodeURIComponent(bo || "")}`;
-const V = { NAME: 0, CITY: 1, STATE: 2, AWARDS: 3, AVG: 4, LAST: 5, REL: 6 };
+const V = { NAME: 0, CITY: 1, STATE: 2, AWARDS: 3, AVG: 4, LAST: 5, REL: 6, EMAIL: 7, PHONE: 8, DOMAIN: 9 };
 let VENDORS = {};
 let META = null, ROWS = [], HAY = [];
 
@@ -261,23 +261,57 @@ function openVendors(id) {
           <div class="small muted">${esc([v[V.CITY], v[V.STATE]].filter(Boolean).join(", ") || "location not listed")}
             · ${v[V.AWARDS]} federal award${v[V.AWARDS] > 1 ? "s" : ""} here, averaging ${money(v[V.AVG])}
             · last ${esc(v[V.LAST] || "unknown")}</div>
+          ${v[V.EMAIL] ? `<div class="small" style="margin-top:4px"><strong>${esc(v[V.EMAIL])}</strong>${v[V.PHONE] ? ` · ${esc(v[V.PHONE])}` : ""}</div>`
+            : v[V.PHONE] ? `<div class="small muted" style="margin-top:4px">${esc(v[V.PHONE])} · no published email</div>` : ""}
         </div>
         <div class="acts">
-          <a class="btn ghost" target="_blank" rel="noopener"
-             href="https://www.google.com/search?q=${encodeURIComponent('"' + v[V.NAME] + '" ' + [v[V.CITY], v[V.STATE]].filter(Boolean).join(" ") + " contact")}">Find contact</a>
-          <button class="btn act-mail" data-i="${i}">${isContacted(v[V.NAME]) ? "Email again" : "Write email"}</button>
+          ${v[V.EMAIL] ? "" : `<a class="btn ghost" target="_blank" rel="noopener"
+             href="https://www.google.com/search?q=${encodeURIComponent('"' + v[V.NAME] + '" ' + [v[V.CITY], v[V.STATE]].filter(Boolean).join(" ") + " contact email")}">Find contact</a>`}
+          <button class="btn act-mail ${isContacted(v[V.NAME]) ? "ticked" : ""}" data-i="${i}">${isContacted(v[V.NAME]) ? '<span class="tick-mark">\u2713</span> emailed' : v[V.EMAIL] ? "Send email" : "Write email"}</button>
         </div>
       </div>`).join("")}</div>`;
 
   $("#dlg-body").querySelectorAll(".act-mail").forEach((b) => b.onclick = () => {
     const v = list[Number(b.dataset.i)];
-    openComposer(r, v, deadline);
+    window.open(gmailUrl(composeFor(r, v, deadline)), "_blank", "noopener");
+    markContacted(v[V.NAME]);
+    tick(b);
   });
   $("#dlg").showModal();
 }
 
 // Compose panel: writes the email, then hands it to Gmail, Outlook, or the desktop
 // mail client. A static page cannot send mail itself, so it hands off to one that can.
+// Turn the button into a tick, briefly, then settle into "emailed".
+function tick(btn) {
+  btn.disabled = true;
+  btn.classList.add("ticked");
+  btn.innerHTML = '<span class="tick-mark">\u2713</span>';
+  setTimeout(() => { btn.innerHTML = '<span class="tick-mark">\u2713</span> emailed'; }, 650);
+}
+
+// The message itself: subject and body for one company and one contract.
+function composeFor(r, v, deadline) {
+  return {
+    to: v[V.EMAIL] || "",
+    su: `Government contract you can bid on \u2014 ${r[F.TITLE].slice(0, 60)}`,
+    bo: [
+      `Hi,`,
+      ``,
+      `Thought this might be worth a look. It closes ${deadline}.`,
+      ``,
+      r[F.TITLE],
+      r[F.LINK] || "",
+      ``,
+      `You came up in the federal award records for this kind of work, which is how I found you.`,
+      ``,
+      `Worth a conversation?`,
+      ``,
+      `[Your name]`,
+    ].join("\n"),
+  };
+}
+
 function openComposer(r, v, deadline) {
   const who = [v[V.CITY], v[V.STATE]].filter(Boolean).join(", ");
   const subject = `Government contract you can bid on \u2014 ${r[F.TITLE].slice(0, 60)}`;
