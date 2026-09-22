@@ -15,7 +15,9 @@ const STATE_NAME = { AL:"Alabama", AK:"Alaska", AZ:"Arizona", AR:"Arkansas", CA:
   DC:"Washington, D.C.", PR:"Puerto Rico", VI:"U.S. Virgin Islands", GU:"Guam", AS:"American Samoa",
   MP:"Northern Mariana Islands", AE:"Armed Forces Europe", AP:"Armed Forces Pacific", AA:"Armed Forces Americas" };
 const stateName = (c) => STATE_NAME[c] || c;
-const naicsLabel = (c) => `${c} · ${NAICS_SECTOR[String(c).slice(0, 2)] || "Other"}`;
+let NAICS_NAME = {};
+const naicsName = (c) => NAICS_NAME[String(c)] || "";
+const naicsLabel = (c) => naicsName(c) ? `${c} · ${naicsName(c)}` : `${c} · ${NAICS_SECTOR[String(c).slice(0, 2)] || "Other"}`;
 const agencyName = (raw) => {
   let v = String(raw || "").trim();
   const m = v.match(/^(.*),\s*(DEPARTMENT|DEPT)\s+OF\.?$/i);
@@ -65,7 +67,10 @@ const payload = await res.json();
 META = payload.meta; ROWS = payload.rows;
 const D = META.dicts;
 fetch("./vendors.json").then((r) => r.json()).then((v) => { VENDORS = v; }).catch(() => {});
-HAY = ROWS.map((r) => (r[F.TITLE] + " " + r[F.SNIP] + " " + D.depts[r[F.DEPT]] + " " + r[F.NAICS]).toLowerCase());
+NAICS_NAME = META.naics_names || {};
+// Searching "roofing" should find a roofing contract whose title never says it, so the
+// industry name goes into the haystack alongside the title and description.
+HAY = ROWS.map((r) => (r[F.TITLE] + " " + r[F.SNIP] + " " + D.depts[r[F.DEPT]] + " " + r[F.NAICS] + " " + naicsName(r[F.NAICS])).toLowerCase());
 $("#pill-data").textContent = `${META.total.toLocaleString()} open notices`;
 
 const dept = (r) => D.depts[r[F.DEPT]] || "";
@@ -214,7 +219,7 @@ function oppCard(r) {
       ${r[F.STATE] ? `<span class="sep">·</span><span>${esc([r[F.CITY], r[F.STATE]].filter(Boolean).join(", "))}</span>` : ""}
       ${sa ? `<span class="tag setaside">${esc(sa.replace(/\s*\(FAR[^)]*\)/, ""))}</span>` : ""}
       <span class="tag">${esc(type(r))}</span>
-      ${r[F.NAICS] ? `<span class="tag">NAICS ${r[F.NAICS]}</span>` : ""}
+      ${r[F.NAICS] ? `<span class="tag" title="NAICS ${r[F.NAICS]}">${esc(naicsName(r[F.NAICS]) || "NAICS " + r[F.NAICS])}</span>` : ""}
       ${source(r) !== "sam.gov" ? `<span class="tag" style="color:var(--series-2);border-color:color-mix(in srgb,var(--series-2) 45%,transparent)">${esc(sourceLabel(source(r)))}</span>` : ""}
       ${chips}
     </div>
