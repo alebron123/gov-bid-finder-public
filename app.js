@@ -36,6 +36,7 @@ $("#theme-toggle").onclick = () => {
   if (currentTab() === "dashboard") renderDashboard();
 };
 const currentTab = () => document.querySelector("[role=tab][aria-selected=true]").dataset.tab;
+$("#dlg").addEventListener("close", () => { if (location.hash.startsWith("#c=")) history.replaceState(null, "", location.pathname); });
 document.querySelectorAll("[role=tab]").forEach((b) => b.onclick = () => {
   document.querySelectorAll("[role=tab]").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
   document.querySelectorAll(".panel").forEach((p) => p.classList.toggle("active", p.id === "panel-" + b.dataset.tab));
@@ -43,6 +44,7 @@ document.querySelectorAll("[role=tab]").forEach((b) => b.onclick = () => {
   if (b.dataset.tab === "search") runSearch(1);
   if (b.dataset.tab === "renewals") initRenewals();
   if (b.dataset.tab === "plan") initPlan();
+  if (b.dataset.tab === "saved") renderSaved();
 });
 
 // ---- data ----
@@ -337,6 +339,36 @@ function composeFor(r, v, deadline) {
   };
 }
 
+// ---- shortlist: contracts worth coming back to ----
+const saved = new Set(JSON.parse(localStorage.getItem("saved") || "[]"));
+const persistSaved = () => localStorage.setItem("saved", JSON.stringify([...saved]));
+function toggleSaved(id) {
+  if (saved.has(id)) saved.delete(id); else saved.add(id);
+  persistSaved();
+  updateSavedCount();
+  return saved.has(id);
+}
+function updateSavedCount() {
+  const b = document.querySelector("[data-tab=saved]");
+  if (b) { b.textContent = saved.size ? `Shortlist (${saved.size})` : "Shortlist"; b.hidden = false; }
+}
+function renderSaved() {
+  updateSavedCount();
+  const rows = [...saved].map((id) => ROWS.find((r) => r[F.ID] === id)).filter(Boolean)
+    .sort((a, b) => a[F.DUE].localeCompare(b[F.DUE]));
+  const host = $("#saved-list");
+  if (!rows.length) {
+    host.innerHTML = '<div class="empty">Nothing saved yet. Open any contract and press Save to build a shortlist.</div>';
+    $("#saved-count").textContent = "";
+    return;
+  }
+  const closing = rows.filter((r) => daysLeft(r[F.DUE]) <= 7).length;
+  $("#saved-count").textContent = `${rows.length} saved${closing ? ` · ${closing} closing within a week` : ""}`;
+  host.innerHTML = rows.map(oppCard).join("");
+  host.querySelectorAll(".opp").forEach((c) => c.onclick = () => openDetail(c.dataset.id));
+  host.querySelectorAll(".find-co").forEach((b) => b.onclick = (e) => { e.stopPropagation(); openVendors(b.dataset.id); });
+}
+
 // ---- detail ----
 function openDetail(id) {
   const r = ROWS.find((x) => x[F.ID] === id);
@@ -360,10 +392,27 @@ function openDetail(id) {
       <button type="button" class="btn act-mail" id="ask-buyer">Email the buyer</button>
       <div class="small muted" style="margin-top:8px">The person running this contract is <strong>${esc(r[F.CNAME] || r[F.EMAIL])}</strong> at ${esc(r[F.EMAIL])}.</div>
     </div>` : ""}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
+      <button type="button" class="btn ghost" id="save-opp">${saved.has(r[F.ID]) ? "\u2605 Saved" : "\u2606 Save"}</button>
+      <button type="button" class="btn ghost" id="share-opp">Copy link</button>
+    </div>
     <div class="callout small">This public page is read-only. The full app adds Claude: a plain-English explanation of this notice, a fit score against your business, and a complete drafted response package.</div>`;
   $("#dlg").showModal();
   const ask = $("#ask-buyer");
   if (ask) ask.addEventListener("click", () => { markContacted("buyer:" + r[F.ID]); tick(ask); });
+  const sv = $("#save-opp");
+  if (sv) sv.addEventListener("click", () => {
+    sv.textContent = toggleSaved(r[F.ID]) ? "\u2605 Saved" : "\u2606 Save";
+    if (currentTab() === "saved") renderSaved();
+  });
+  const sh = $("#share-opp");
+  if (sh) sh.addEventListener("click", async () => {
+    const link = `${location.origin}${location.pathname}#c=${r[F.ID]}`;
+    try { await navigator.clipboard.writeText(link); sh.textContent = "\u2713 Copied"; }
+    catch { sh.textContent = link.slice(0, 40); }
+    setTimeout(() => { sh.textContent = "Copy link"; }, 1800);
+  });
+  location.hash = "c=" + r[F.ID];
 }
 
 // ---- business plan ----
@@ -507,5 +556,12 @@ addEventListener("keydown", (e) => {
 });
 
 renderDashboard();
+
+updateSavedCount();
+// A link of the form #c=<notice id> opens that contract straight away.
+{
+  const m = location.hash.match(/^#c=(.+)$/);
+  if (m && ROWS.some((r) => r[F.ID] === decodeURIComponent(m[1]))) openDetail(decodeURIComponent(m[1]));
+}
 
 $("#about-built").textContent = `Snapshot of ${META.total.toLocaleString()} open notices, built ${new Date(META.built_at).toLocaleString()}.`;

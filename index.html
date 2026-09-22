@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Gov Bid Finder — open US government contract opportunities</title>
 <meta name="description" content="Search every open US federal and Florida state contract opportunity in one place.">
-<link rel="stylesheet" href="./styles.css?v=1789929445">
+<link rel="stylesheet" href="./styles.css?v=1790095488">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='11' fill='%232a78d6'/></svg>">
 </head>
 <body>
@@ -15,6 +15,7 @@
     <button role="tab" data-tab="dashboard" aria-selected="true">Dashboard</button>
     <button role="tab" data-tab="search" aria-selected="false">Search</button>
     <button role="tab" data-tab="renewals" aria-selected="false">Renewals</button>
+    <button role="tab" data-tab="saved" aria-selected="false">Shortlist</button>
     <button role="tab" data-tab="plan" aria-selected="false">Business plan</button>
     <button role="tab" data-tab="about" aria-selected="false">About</button>
   </nav>
@@ -80,6 +81,15 @@
     <div class="small muted" id="r-count"></div>
     <div class="results" id="r-list"></div>
     <div style="text-align:center;margin-top:16px"><button class="btn ghost" id="r-more" hidden>Load more</button></div>
+  </section>
+
+  <section class="panel" id="panel-saved">
+    <div class="hero" style="padding:22px 4px 12px">
+      <h1 style="font-size:clamp(26px,3.4vw,38px)">Your shortlist</h1>
+      <p class="lede">Contracts you saved, soonest deadline first.</p>
+    </div>
+    <div class="small muted" id="saved-count"></div>
+    <div class="results" id="saved-list"></div>
   </section>
 
   <section class="panel" id="panel-plan">
@@ -206,6 +216,6 @@
   <div class="dlg-body" id="dlg-body"></div>
 </dialog>
 <div class="tooltip" id="tip"></div>
-<script type="module" src="./app.js?v=1789929445"></script>
+<script type="module" src="./app.js?v=1790095488"></script>
 </body>
 </html>
