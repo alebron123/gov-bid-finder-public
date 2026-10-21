@@ -1,4 +1,5 @@
 import { hbar, vbar, line, card, fmt, usd } from "./charts.js?v=2";
+import { localISODate, addDaysISO, daysBetween, isSetAside, countOpen, liveRenewals, recentMonths, coverageSkewed, emailText } from "./lib.js?v=1";
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -51,33 +52,34 @@ document.querySelectorAll("[role=tab]").forEach((b) => b.onclick = () => {
 
 // ---- data ----
 const F = { ID: 0, TITLE: 1, DEPT: 2, TYPE: 3, SA: 4, DUE: 5, NAICS: 6, STATE: 7, CITY: 8, LINK: 9, SRC: 10, SNIP: 11, POSTED: 12, SUBTIER: 13, CONTACT: 14, EMAIL: 15, CNAME: 16, SCORE: 17, SIMP: 18, VALUE: 19, BENCH: 20, US: 21 };
-
-// Gmail opens in this account, so the message is already coming from the right address.
-const SEND_AS = "govbidfind@gmail.com";
-const gmailUrl = ({ to, su, bo }) =>
-  `https://mail.google.com/mail/?view=cm&fs=1&authuser=${encodeURIComponent(SEND_AS)}`
-  + `&to=${encodeURIComponent(to || "")}&su=${encodeURIComponent(su || "")}&body=${encodeURIComponent(bo || "")}`;
 const V = { NAME: 0, CITY: 1, STATE: 2, AWARDS: 3, AVG: 4, LAST: 5, REL: 6, EMAIL: 7, PHONE: 8, DOMAIN: 9 };
 let VENDORS = {};
 let META = null, ROWS = [], HAY = [];
 
 $("#pill-data").textContent = "loading…";
-const res = await fetch("./data.json");
-const payload = await res.json();
-META = payload.meta; ROWS = payload.rows;
+// WHY: vendors load alongside the notices, not after. Cards rendered before the
+// vendor list arrived never got a "Find companies" button.
+const [payload, vendors] = await Promise.all([
+  fetch("./data.json").then((r) => r.json()),
+  fetch("./vendors.json").then((r) => r.json()).catch(() => ({})),
+]);
+META = payload.meta; ROWS = payload.rows; VENDORS = vendors;
 const D = META.dicts;
-fetch("./vendors.json").then((r) => r.json()).then((v) => { VENDORS = v; }).catch(() => {});
 NAICS_NAME = META.naics_names || {};
 // Searching "roofing" should find a roofing contract whose title never says it, so the
 // industry name goes into the haystack alongside the title and description.
 HAY = ROWS.map((r) => (r[F.TITLE] + " " + r[F.SNIP] + " " + D.depts[r[F.DEPT]] + " " + r[F.NAICS] + " " + naicsName(r[F.NAICS])).toLowerCase());
-$("#pill-data").textContent = `${META.total.toLocaleString()} open notices`;
+// The snapshot is not live. Count what is still open today and say how old the data is,
+// rather than repeating the total from the day it was built.
+const builtOn = new Date(META.built_at).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+$("#pill-data").textContent = `${countOpen(ROWS, F.DUE, localISODate()).toLocaleString()} open · data from ${builtOn}`;
 
 const dept = (r) => D.depts[r[F.DEPT]] || "";
 const type = (r) => D.types[r[F.TYPE]] || "";
-const setaside = (r) => D.setasides[r[F.SA]] || "";
+// Only real set-asides; "No Set aside used" reads as "" so every caller treats it as open to all.
+const setaside = (r) => { const v = D.setasides[r[F.SA]] || ""; return isSetAside(v) ? v : ""; };
 const source = (r) => D.sources[r[F.SRC]] || "";
-const daysLeft = (d) => Math.ceil((new Date(d + "T23:59:59") - Date.now()) / 86400e3);
+const daysLeft = (d) => daysBetween(localISODate(), d);
 
 // ---- filter selects ----
 function fillSelect(sel, values, label) {
@@ -100,8 +102,8 @@ fillSelect($("#s-type"), ROWS.map(type), (v) => v);
 // ---- filtering ----
 const money = (n) => !n ? "?" : n >= 1e6 ? "$" + (n / 1e6).toFixed(n >= 1e7 ? 0 : 1) + "M" : n >= 1e3 ? "$" + Math.round(n / 1e3) + "k" : "$" + Math.round(n);
 function filtered({ state, src, sa, days, q, dep, ty, us, sort }) {
-  const today = new Date().toISOString().slice(0, 10);
-  const cutoff = days ? new Date(Date.now() + days * 86400e3).toISOString().slice(0, 10) : null;
+  const today = localISODate();
+  const cutoff = days ? addDaysISO(days) : null;
   const terms = (q || "").toLowerCase().split(/\s+/).filter(Boolean);
   const out = [];
   for (let i = 0; i < ROWS.length; i++) {
@@ -161,13 +163,14 @@ function renderDashboard() {
   const scope = $("#d-state").value ? `in ${stateName($("#d-state").value)}` : "nationwide";
   const soon = rows.filter((r) => daysLeft(r[F.DUE]) <= 7).length;
   const small = rows.filter((r) => setaside(r)).length;
-  const awards12 = META.awards_by_month.reduce((a, b) => a + (b.dollars || 0), 0);
+  const months = recentMonths(META.awards_by_month, 12);
+  const awards12 = months.reduce((a, b) => a + (b.dollars || 0), 0);
   const bySrc = tally(rows, source);
   $("#tiles").innerHTML = [
     ["Matching your filters", rows.length.toLocaleString(), bySrc.length > 1 ? bySrc.map((x) => `${x.value.toLocaleString()} ${sourceLabel(x.label).replace(/ \(.*\)/, "")}`).join(" · ") : `open notices ${scope}`],
     ["Closing this week", soon.toLocaleString(), `deadlines within 7 days ${scope}`],
     ["Reserved for small business", small.toLocaleString(), `of ${rows.length.toLocaleString()} shown`],
-    ["Awarded, last 12 months", usd(awards12), `${META.awards_by_month.reduce((a, b) => a + b.value, 0).toLocaleString()} contracts`],
+    ["Awarded, last 12 months", usd(awards12), `${months.reduce((a, b) => a + b.value, 0).toLocaleString()} contracts on record`],
   ].map(([l, v, s]) => `<div class="card tile"><div class="label">${l}</div><div class="value">${v}</div><div class="sub">${s}</div></div>`).join("");
 
   const host = $("#charts"); host.innerHTML = "";
@@ -177,7 +180,7 @@ function renderDashboard() {
   const weeks = new Map();
   for (const r of rows) {
     const d = new Date(r[F.DUE] + "T12:00:00"); d.setDate(d.getDate() - d.getDay());
-    const k = d.toISOString().slice(0, 10);
+    const k = localISODate(d);
     weeks.set(k, (weeks.get(k) || 0) + 1);
   }
   const wk = [...weeks].sort().slice(0, 9).map(([label, value]) => ({ label, value, short: label.slice(5).replace("-", "/"), full: "Week of " + label }));
@@ -187,11 +190,16 @@ function renderDashboard() {
   add("Who is allowed to bid", "Set-aside status. Anything but “Open to all” restricts bidders to certified firms.", (el) =>
     hbar(el, tally(rows, (r) => setaside(r) || "Open to all").slice(0, 8).map((d) => ({ ...d, label: d.label.replace(/\s*\(FAR[^)]*\)/, "").replace(" Set-Aside", "").replace(" Set Aside - Total", "") }))));
   add("Where the work is", "Place of performance by state.", (el) =>
-    hbar(el, tally(rows, (r) => r[F.STATE]).slice(0, 12), { onClick: (d) => { $("#d-state").value = d.label; renderDashboard(); } }));
+    hbar(el, tally(rows, (r) => STATE_NAME[r[F.STATE]] ? r[F.STATE] : "").slice(0, 12), { onClick: (d) => { $("#d-state").value = d.label; renderDashboard(); } }));
   add("What gets bought most", "NAICS industry codes, the government's industry classification.", (el) =>
     hbar(el, tally(rows, (r) => r[F.NAICS]).slice(0, 10).map((d) => ({ ...d, code: d.label, label: naicsLabel(d.label) })), { onClick: (d) => jump({ q: d.code }) }));
-  add("Contract dollars awarded", "Total award value per month, last 12 months. Shows how much money moves in this market.", (el) =>
-    line(el, META.awards_by_month.map((d) => ({ label: d.label, value: d.dollars || 0, short: d.label.slice(5) + "/" + d.label.slice(2, 4), full: d.label, note: `${d.value.toLocaleString()} contracts` })), { valueFmt: usd }));
+  // When the newest month dwarfs the rest, the jump is record collection, not spending.
+  // Say so instead of letting the line imply a boom.
+  const awardsSub = coverageSkewed(months)
+    ? "Award value per month from the records collected so far. Earlier months are thinly sampled, so the jump at the end reflects coverage, not a spending surge."
+    : "Total award value per month, last 12 months. Shows how much money moves in this market.";
+  add("Contract dollars awarded", awardsSub, (el) =>
+    line(el, months.map((d) => ({ label: d.label, value: d.dollars || 0, short: d.label.slice(5) + "/" + d.label.slice(2, 4), full: d.label, note: `${d.value.toLocaleString()} contracts` })), { valueFmt: usd }));
   requestAnimationFrame(() => pending.forEach((f) => f()));
 }
 ["#d-state", "#d-source", "#d-setaside", "#d-days"].forEach((s) => $(s).onchange = renderDashboard);
@@ -252,10 +260,42 @@ function jump(f) {
 }
 
 // Ticks are for this visit only. Refreshing puts every button back to normal.
-const contacted = new Set();
-const contactedKey = (name) => String(name).toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 28);
-const markContacted = (name) => contacted.add(contactedKey(name));
-const isContacted = (name) => contacted.has(contactedKey(name));
+const copied = new Set();
+const copiedKey = (name) => String(name).toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 28);
+const markCopied = (name) => copied.add(copiedKey(name));
+const isCopied = (name) => copied.has(copiedKey(name));
+
+// WHY: these buttons deliberately never navigate or open a mail client (see the
+// "Nothing opens Gmail" commit). They used to tick "emailed" while doing nothing,
+// so the user believed a message went out. Copying the draft is a real action that
+// still keeps the user on the page.
+// WHY: the legacy copy runs first and synchronously. In-app browsers (mail apps,
+// social webviews, where these links get opened) often deny the Clipboard API
+// outright, and Safari drops the click's permission after any await. The textarea
+// goes inside the open dialog because a modal dialog makes the rest of the page
+// inert, so nothing outside it can be selected.
+function legacyCopy(text, host) {
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.setAttribute("readonly", "");
+  ta.style.cssText = "position:fixed;top:0;left:0;opacity:0";
+  host.appendChild(ta);
+  ta.select();
+  ta.setSelectionRange(0, text.length);
+  let ok = false;
+  try { ok = document.execCommand("copy"); } catch {}
+  ta.remove();
+  return ok;
+}
+async function copyText(text, host = document.body) {
+  if (legacyCopy(text, host)) return true;
+  try { await navigator.clipboard.writeText(text); return true; } catch { return false; }
+}
+async function copyAndTick(btn, text, onCopied) {
+  const label = btn.textContent;
+  if (await copyText(text, btn.closest("dialog") || document.body)) { onCopied(); tick(btn); }
+  else { btn.textContent = "Couldn't copy"; setTimeout(() => { btn.textContent = label; }, 1800); }
+}
 
 // ---- companies that already win this kind of work ----
 function openVendors(id) {
@@ -276,7 +316,7 @@ function openVendors(id) {
       <div class="vendor">
         <div class="rel"><b>${v[V.REL]}</b><span>fit</span></div>
         <div class="who">
-          <strong>${esc(v[V.NAME])}</strong>${isContacted(v[V.NAME]) ? ' <span class="sent-tick" title="You have emailed this company">✓ emailed</span>' : ""}
+          <strong>${esc(v[V.NAME])}</strong>${isCopied(v[V.NAME]) ? ' <span class="sent-tick" title="You copied a draft email to this company">✓ copied</span>' : ""}
           <div class="small muted">${esc([v[V.CITY], v[V.STATE]].filter(Boolean).join(", ") || "location not listed")}
             · ${v[V.AWARDS]} federal award${v[V.AWARDS] > 1 ? "s" : ""} here, averaging ${money(v[V.AVG])}
             · last ${esc(v[V.LAST] || "unknown")}</div>
@@ -285,41 +325,23 @@ function openVendors(id) {
         </div>
         <div class="acts">
 
-          <button type="button" class="btn act-mail ${isContacted(v[V.NAME]) ? "ticked" : ""}" data-i="${i}">${isContacted(v[V.NAME]) ? '<span class="tick-mark">\u2713</span> emailed' : "Write email"}</button>
+          <button type="button" class="btn act-mail ${isCopied(v[V.NAME]) ? "ticked" : ""}" data-i="${i}" title="Copies a drafted email to your clipboard">${isCopied(v[V.NAME]) ? '<span class="tick-mark">\u2713</span> copied' : "Copy email"}</button>
         </div>
       </div>`).join("")}</div>`;
 
   $("#dlg-body").querySelectorAll(".act-mail").forEach((b) => b.addEventListener("click", () => {
-    // Nothing is sent and nothing navigates. The click only marks the company and ticks.
-    markContacted(list[Number(b.dataset.i)][V.NAME]);
-    tick(b);
+    // Nothing is sent and nothing navigates. The draft goes to the clipboard.
+    const v = list[Number(b.dataset.i)];
+    copyAndTick(b, emailText(composeFor(r, v, deadline)), () => markCopied(v[V.NAME]));
   }));
   $("#dlg").showModal();
 }
 
-// Compose panel: writes the email, then hands it to Gmail, Outlook, or the desktop
-// mail client. A static page cannot send mail itself, so it hands off to one that can.
-// Browsers block window.open in plenty of situations (popup blockers, in-app
-// browsers, iOS). If the new tab does not open, go to Gmail in this tab instead
-// so the click always does something.
-function openMail(url) {
-  let w = null;
-  try { w = window.open(url, "_blank", "noopener"); } catch { w = null; }
-  if (!w || w.closed || typeof w.closed === "undefined") {
-    const a = document.createElement("a");
-    a.href = url; a.target = "_blank"; a.rel = "noopener";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => { if (!document.hidden) location.href = url; }, 400);
-  }
-}
-
-// Turn the button into a tick, briefly, then settle into "emailed".
+// Turn the button into a tick, briefly, then settle into "copied".
 function tick(btn) {
   btn.classList.add("ticked");
   btn.innerHTML = '<span class="tick-mark">\u2713</span>';
-  setTimeout(() => { btn.innerHTML = '<span class="tick-mark">\u2713</span> emailed'; }, 650);
+  setTimeout(() => { btn.innerHTML = '<span class="tick-mark">\u2713</span> copied'; }, 650);
 }
 
 // The message itself: subject and body for one company and one contract.
@@ -394,7 +416,7 @@ function openDetail(id) {
     </dl>
     <div class="section"><h4>Notice text</h4><div class="small" style="white-space:pre-wrap">${esc(r[F.SNIP] || "No description in the feed — the detail is in the attachments on the official notice.")}</div></div>
     ${r[F.EMAIL] ? `<div style="margin-top:16px;padding:14px;background:var(--page);border:1px solid var(--border);border-radius:8px">
-      <button type="button" class="btn act-mail" id="ask-buyer">Email the buyer</button>
+      <button type="button" class="btn act-mail" id="ask-buyer" title="Copies the buyer's email address">Copy buyer's email</button>
       <div class="small muted" style="margin-top:8px">The person running this contract is <strong>${esc(r[F.CNAME] || r[F.EMAIL])}</strong> at ${esc(r[F.EMAIL])}.</div>
     </div>` : ""}
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
@@ -404,7 +426,7 @@ function openDetail(id) {
     <div class="callout small">This public page is read-only. The full app adds Claude: a plain-English explanation of this notice, a fit score against your business, and a complete drafted response package.</div>`;
   $("#dlg").showModal();
   const ask = $("#ask-buyer");
-  if (ask) ask.addEventListener("click", () => { markContacted("buyer:" + r[F.ID]); tick(ask); });
+  if (ask) ask.addEventListener("click", () => copyAndTick(ask, r[F.EMAIL], () => markCopied("buyer:" + r[F.ID])));
   const sv = $("#save-opp");
   if (sv) sv.addEventListener("click", () => {
     sv.textContent = toggleSaved(r[F.ID]) ? "\u2605 Saved" : "\u2606 Save";
@@ -425,17 +447,19 @@ let planDone = false;
 async function initPlan() {
   if (planDone) return;
   planDone = true;
-  const open = ROWS.filter((r) => r[F.DUE] >= META.today && r[F.US]);
+  // WHY: META.today is the day the snapshot was built; measuring against it counted
+  // every notice that has closed since as still sendable.
+  const open = ROWS.filter((r) => r[F.DUE] >= localISODate() && r[F.US]);
   const withEmail = open.filter((r) => r[F.EMAIL]).length;
   let companies = new Set();
   for (const k in VENDORS) for (const c of VENDORS[k]) companies.add(c[V.NAME]);
-  if (!RENEWALS.length) { try { RENEWALS = await (await fetch("./renewals.json")).json(); } catch {} }
-  const cutoff = new Date(Date.now() + 365 * 86400e3).toISOString().slice(0, 10);
+  try { await loadRenewals(); } catch {}
+  const cutoff = addDaysISO(365);
   const exp = RENEWALS.filter((r) => r[R.END] <= cutoff);
   const expValue = exp.reduce((a, r) => a + r[R.AMT], 0);
 
   $("#plan-tiles").innerHTML = [
-    ["Contracts we can send", open.length.toLocaleString(), "open right now, refreshed daily"],
+    ["Contracts we can send", open.length.toLocaleString(), `still open from the ${builtOn} snapshot`],
     ["Companies we can reach", companies.size.toLocaleString(), `across ${Object.keys(VENDORS).length} industry codes`],
     ["Expiring within a year", usd(expValue), `${exp.length.toLocaleString()} contracts someone else holds`],
     ["Buyers we can name", withEmail.toLocaleString(), "contracts with the officer's email"],
@@ -467,10 +491,23 @@ const niceDesc = (v) => {
 const R = { TRADE: 0, END: 1, AMT: 2, WHO: 3, AGENCY: 4, STATE: 5, NAICS: 6, DESC: 7, ID: 8 };
 let RENEWALS = [], rPage = 1, rHits = [];
 
+// One shared load for the Renewals and Business plan tabs. Contracts that have already
+// ended are dropped here, so neither tab lists them.
+let renewalsLoad = null;
+const loadRenewals = () => renewalsLoad ??= fetch("./renewals.json").then((r) => r.json())
+  .then((rows) => (RENEWALS = liveRenewals(rows, R.END, localISODate())))
+  .catch((e) => { renewalsLoad = null; throw e; });
+
+// WHY: a flag, not RENEWALS.length. Opening Business plan first filled RENEWALS, so this
+// tab skipped building its trade and state filters and never wired them up.
+let renewalsWired = false;
 async function initRenewals() {
-  if (!RENEWALS.length) {
-    try { RENEWALS = await (await fetch("./renewals.json")).json(); }
+  if (!renewalsWired) {
+    try { await loadRenewals(); }
     catch { $("#r-list").innerHTML = '<div class="empty">Renewal data unavailable.</div>'; return; }
+  }
+  if (!renewalsWired) {
+    renewalsWired = true;
     const trades = [...new Set(RENEWALS.map((r) => r[R.TRADE]))].sort();
     for (const t of trades) { const o = document.createElement("option"); o.value = t; o.textContent = t; $("#r-trade").appendChild(o); }
     const states = [...new Set(RENEWALS.map((r) => r[R.STATE]).filter((v) => v && STATE_NAME[v]))].sort((a, b) => stateName(a).localeCompare(stateName(b)));
@@ -484,7 +521,8 @@ async function initRenewals() {
 function renderRenewals(p = 1) {
   if (p === 1) {
     const months = Number($("#r-window").value);
-    const cutoff = months ? new Date(Date.now() + months * 30.44 * 86400e3).toISOString().slice(0, 10) : "9999";
+    // 30.44 = average days per month (365.25 / 12)
+    const cutoff = months ? addDaysISO(Math.round(months * 30.44)) : "9999";
     const trade = $("#r-trade").value, state = $("#r-state").value;
     rHits = RENEWALS.filter((r) => r[R.END] <= cutoff && (!trade || r[R.TRADE] === trade) && (!state || r[R.STATE] === state));
     rHits.sort($("#r-sort").value === "amount" ? (a, b) => b[R.AMT] - a[R.AMT] : (a, b) => a[R.END].localeCompare(b[R.END]));
@@ -514,13 +552,13 @@ function renderRenewals(p = 1) {
   $("#r-list").insertAdjacentHTML("beforeend", rHits.slice((p - 1) * 25, p * 25).map((r) => {
     const d = daysLeft(r[R.END]);
     const cls = d <= 90 ? "soon" : d <= 270 ? "warn" : "";
-    const when = d <= 0 ? "today" : d === 1 ? "1 day" : d < 30 ? `${d} days`
+    const when = d <= 0 ? "expires today" : "expires in " + (d === 1 ? "1 day" : d < 30 ? `${d} days`
       : d < 60 ? "1 month" : d < 365 ? `${Math.round(d / 30)} months`
-      : d < 730 ? "about a year" : `${(d / 365).toFixed(1)} years`;
+      : d < 730 ? "about a year" : `${(d / 365).toFixed(1)} years`);
     return `<article class="opp" style="padding-right:16px">
       <h3>${esc(niceDesc(r[R.DESC]) || r[R.TRADE])}</h3>
       <div class="meta">
-        <span class="due ${cls}">expires in ${when}</span> <span class="sep">\u00b7</span>
+        <span class="due ${cls}">${when}</span> <span class="sep">\u00b7</span>
         <span>${esc(r[R.END])}</span> <span class="sep">\u00b7</span>
         <span class="tag">${esc(r[R.TRADE])}</span>
         ${r[R.STATE] ? `<span class="tag">${esc(r[R.STATE])}</span>` : ""}
