@@ -112,6 +112,39 @@ table.data td{padding:7px 8px;border-bottom:1px solid var(--grid);font-variant-n
 .profile-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .bar-track{fill:var(--grid);opacity:.5}
 
+/* Landing hero */
+.hero-main{padding:44px 4px 28px;max-width:980px}
+.hero-main h1{font-size:clamp(32px,5.2vw,58px);line-height:1.04;letter-spacing:-0.035em;font-weight:720;margin:10px 0 16px}
+.hero-main h1 .accent{color:var(--series-1)}
+.hero-main .lede{font-size:clamp(15px,1.6vw,18px);color:var(--text-secondary);max-width:720px;margin:0 0 20px}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:550;color:var(--text-secondary);border:1px solid var(--border);background:var(--surface-1);border-radius:999px;padding:4px 12px;margin:0}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--good);box-shadow:0 0 0 3px color-mix(in srgb,var(--good) 22%,transparent)}
+.trade-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+.trade-chips button{background:var(--surface-1);border:1px solid var(--border);border-radius:999px;padding:7px 14px;cursor:pointer;font-weight:520;transition:border-color .12s,transform .12s}
+.trade-chips button:hover{border-color:var(--series-1);color:var(--series-1);transform:translateY(-1px)}
+.hero-cta{display:flex;gap:10px;flex-wrap:wrap}
+.btn.lg{padding:11px 20px;font-size:15px;border-radius:10px;text-decoration:none;display:inline-block}
+a.btn{text-decoration:none}
+.pitch-btn{padding:5px 13px;font-size:13px}
+/* Heatmaps */
+.heat{grid-template-columns:minmax(0,3fr) minmax(0,2fr);margin-bottom:14px}
+.map-tile rect{transition:filter .12s}
+.map-tile:hover rect{filter:brightness(.92)}
+.map-tile rect.sel{stroke:var(--series-2);stroke-width:3}
+.map-code{font-size:12px;font-weight:650;pointer-events:none}
+.map-n{font-size:10.5px;pointer-events:none;opacity:.85}
+rect.today{stroke:var(--series-2);stroke-width:2}
+.heat-legend{display:flex;align-items:center;gap:3px;margin-top:10px;font-size:11.5px;color:var(--muted)}
+.heat-legend span{margin:0 5px}
+.heat-legend i{width:16px;height:10px;border-radius:2px;display:block}
+
+/* Mid widths: keep the header on one line */
+@media (max-width: 1040px) and (min-width: 761px){
+  header.top{gap:8px;padding:10px 14px}
+  nav.tabs button{padding:7px 8px}
+  .pill{font-size:11.5px;padding:3px 8px}
+}
+
 /* Mobile */
 @media (max-width: 760px){
   header.top{padding:9px 12px;gap:8px}
@@ -120,7 +153,9 @@ table.data td{padding:7px 8px;border-bottom:1px solid var(--grid);font-variant-n
   nav.tabs button{padding:6px 10px;font-size:13px;white-space:nowrap}
   .spacer{display:none}
   main{padding:12px}
-  .charts{grid-template-columns:1fr}
+  .charts,.heat{grid-template-columns:1fr}
+  .hero-main{padding:22px 2px 16px}
+  .pitch-btn{display:none}
   .tiles{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
   .tile .value{font-size:24px}
   #panel-matches > .grid{grid-template-columns:1fr !important}

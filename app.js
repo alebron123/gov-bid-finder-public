@@ -1,4 +1,4 @@
-import { hbar, vbar, line, card, fmt, usd } from "./charts.js?v=2";
+import { hbar, vbar, line, card, fmt, usd, stateMap, calendarHeat } from "./charts.js?v=3";
 import { localISODate, addDaysISO, daysBetween, isSetAside, countOpen, liveRenewals, recentMonths, coverageSkewed, emailText } from "./lib.js?v=1";
 
 const $ = (s) => document.querySelector(s);
@@ -175,7 +175,28 @@ function renderDashboard() {
 
   const host = $("#charts"); host.innerHTML = "";
   const pending = [];
-  const add = (t, s, fn) => { const k = card(t, s); host.appendChild(k); pending.push(() => fn(k.querySelector(".plot"))); };
+  const add = (t, s, fn, into = host) => { const k = card(t, s); into.appendChild(k); pending.push(() => fn(k.querySelector(".plot"))); };
+
+  // ---- heatmaps: where the work is, and which days are crowded ----
+  const heat = $("#heat"); heat.innerHTML = "";
+  const st = $("#d-state").value;
+  // The map always shows every state (ignoring the state filter) so you can compare;
+  // the selected state is outlined.
+  const mapRows = st ? filtered({ src: $("#d-source").value, sa: $("#d-setaside").value, days: Number($("#d-days").value) || 0 }) : rows;
+  const byState = {}, soonByState = {};
+  for (const r of mapRows) if (STATE_NAME[r[F.STATE]]) {
+    byState[r[F.STATE]] = (byState[r[F.STATE]] || 0) + 1;
+    if (daysLeft(r[F.DUE]) <= 7) soonByState[r[F.STATE]] = (soonByState[r[F.STATE]] || 0) + 1;
+  }
+  const notes = Object.fromEntries(Object.entries(soonByState).map(([k, v]) => [k, `${v} closing this week`]));
+  add("Where the work is", st ? `${stateName(st)} outlined. Click another state to switch, or the same one to clear.` : "Open notices by place of performance. Click a state to focus the dashboard on it.", (el) =>
+    stateMap(el, byState, { selected: st, names: STATE_NAME, notes, onClick: (code) => { $("#d-state").value = code === st ? "" : code; renderDashboard(); } }), heat);
+  const byDay = {};
+  for (const r of rows) byDay[r[F.DUE]] = (byDay[r[F.DUE]] || 0) + 1;
+  const days = Number($("#d-days").value) || 90;
+  const busiest = Object.entries(byDay).sort((a, b) => b[1] - a[1])[0];
+  add("Deadline calendar", busiest ? `Darker days have more bids due. Busiest: ${new Date(busiest[0] + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}, with ${busiest[1]} due.` : "No deadlines in this window.", (el) =>
+    calendarHeat(el, byDay, { start: localISODate(), today: localISODate(), weeks: Math.min(13, Math.ceil(days / 7) + 1) }), heat);
 
   const weeks = new Map();
   for (const r of rows) {
@@ -189,8 +210,6 @@ function renderDashboard() {
     hbar(el, tally(rows, dept).slice(0, 10).map((d) => ({ ...d, label: agencyName(d.label) })), { onClick: (d) => jump({ dept: tally(rows, dept).find((x) => agencyName(x.label) === d.label).label }) }));
   add("Who is allowed to bid", "Set-aside status. Anything but “Open to all” restricts bidders to certified firms.", (el) =>
     hbar(el, tally(rows, (r) => setaside(r) || "Open to all").slice(0, 8).map((d) => ({ ...d, label: d.label.replace(/\s*\(FAR[^)]*\)/, "").replace(" Set-Aside", "").replace(" Set Aside - Total", "") }))));
-  add("Where the work is", "Place of performance by state.", (el) =>
-    hbar(el, tally(rows, (r) => STATE_NAME[r[F.STATE]] ? r[F.STATE] : "").slice(0, 12), { onClick: (d) => { $("#d-state").value = d.label; renderDashboard(); } }));
   add("What gets bought most", "NAICS industry codes, the government's industry classification.", (el) =>
     hbar(el, tally(rows, (r) => r[F.NAICS]).slice(0, 10).map((d) => ({ ...d, code: d.label, label: naicsLabel(d.label) })), { onClick: (d) => jump({ q: d.code }) }));
   // When the newest month dwarfs the rest, the jump is record collection, not spending.
@@ -203,6 +222,12 @@ function renderDashboard() {
   requestAnimationFrame(() => pending.forEach((f) => f()));
 }
 ["#d-state", "#d-source", "#d-setaside", "#d-days"].forEach((s) => $(s).onchange = renderDashboard);
+document.querySelectorAll("#trade-chips button").forEach((b) => b.onclick = () => jump({ q: b.dataset.q }));
+$("#cta-florida").onclick = () => {
+  $("#d-state").value = "FL";
+  renderDashboard();
+  $("#tiles").scrollIntoView({ behavior: "smooth", block: "start" });
+};
 addEventListener("resize", () => { clearTimeout(window._rz); window._rz = setTimeout(() => { if (currentTab() === "dashboard") renderDashboard(); }, 200); });
 
 // ---- search ----

@@ -107,6 +107,90 @@ export function line(host, data, { valueFmt = fmt, valueLabel = "" } = {}) {
   });
 }
 
+// Five shades of series-1 for heatmaps. Quantile breaks, not linear: one state
+// (Maryland, Virginia) would otherwise turn every other state the palest shade.
+const HEAT_MIX = [16, 34, 52, 72, 94];
+const heatFill = (bin) => bin < 0 ? "var(--grid)" : `color-mix(in srgb, var(--series-1) ${HEAT_MIX[bin]}%, var(--surface-1))`;
+export function quantileBins(values, n = HEAT_MIX.length) {
+  const sorted = values.filter((v) => v > 0).sort((a, b) => a - b);
+  if (!sorted.length) return () => -1;
+  const breaks = Array.from({ length: n - 1 }, (_, i) => sorted[Math.floor(((i + 1) / n) * sorted.length)]);
+  return (v) => v > 0 ? breaks.filter((b) => v >= b).length : -1;
+}
+function heatLegend(host, lo, hi, label) {
+  const d = document.createElement("div");
+  d.className = "heat-legend";
+  d.innerHTML = `<span>${label}: ${fmt(lo)}</span>${HEAT_MIX.map((_, i) => `<i style="background:${heatFill(i)}"></i>`).join("")}<span>${fmt(hi)}</span>`;
+  host.appendChild(d);
+}
+
+// Tile-grid US map: every state the same size, so small states (DC, RI, DE) stay
+// visible and clickable. [col, row] on an 11 x 8 grid.
+const TILE = {
+  AK: [0, 0], ME: [10, 0], VT: [9, 1], NH: [10, 1],
+  WA: [0, 2], ID: [1, 2], MT: [2, 2], ND: [3, 2], MN: [4, 2], IL: [5, 2], WI: [6, 2], MI: [7, 2], NY: [8, 2], RI: [9, 2], MA: [10, 2],
+  OR: [0, 3], NV: [1, 3], WY: [2, 3], SD: [3, 3], IA: [4, 3], IN: [5, 3], OH: [6, 3], PA: [7, 3], NJ: [8, 3], CT: [9, 3],
+  CA: [0, 4], UT: [1, 4], CO: [2, 4], NE: [3, 4], MO: [4, 4], KY: [5, 4], WV: [6, 4], VA: [7, 4], MD: [8, 4], DE: [9, 4],
+  AZ: [1, 5], NM: [2, 5], KS: [3, 5], AR: [4, 5], TN: [5, 5], NC: [6, 5], SC: [7, 5], DC: [8, 5],
+  OK: [3, 6], LA: [4, 6], MS: [5, 6], AL: [6, 6], GA: [7, 6],
+  HI: [0, 7], TX: [3, 7], FL: [8, 7], PR: [10, 7],
+};
+export function stateMap(host, counts, { selected = "", names = {}, notes = {}, valueLabel = "open notices", onClick = null } = {}) {
+  host.innerHTML = "";
+  const cols = 11, rows = 8, gap = 4;
+  const w = host.clientWidth || 520;
+  const s = Math.min(54, (w - gap * (cols - 1)) / cols);
+  const svg = el("svg", { viewBox: `0 0 ${cols * (s + gap)} ${rows * (s + gap)}`, role: "img", "aria-label": "Open notices by state" }, host);
+  svg.style.maxWidth = `${cols * (s + gap)}px`;
+  const bin = quantileBins(Object.values(counts));
+  for (const [st, [c, r]] of Object.entries(TILE)) {
+    const v = counts[st] || 0, b = bin(v);
+    const g = el("g", { class: "map-tile", style: onClick && v ? "cursor:pointer" : "" }, svg);
+    const x = c * (s + gap), y = r * (s + gap);
+    el("rect", { x, y, width: s, height: s, rx: 6, fill: heatFill(b), class: st === selected ? "sel" : "" }, g);
+    const ink = b >= 3 ? "#fff" : "var(--text-primary)";
+    el("text", { x: x + s / 2, y: y + s / 2 - 2, "text-anchor": "middle", class: "map-code", fill: ink }, g).textContent = st;
+    if (s >= 34) el("text", { x: x + s / 2, y: y + s / 2 + 13, "text-anchor": "middle", class: "map-n", fill: ink }, g).textContent = v ? fmt(v) : "–";
+    hookTip(g, names[st] || st, [`${v.toLocaleString()} ${valueLabel}`, ...(notes[st] ? [notes[st]] : [])]);
+    if (onClick && v) g.addEventListener("click", () => onClick(st));
+  }
+  const vals = Object.entries(counts).filter(([k, v]) => TILE[k] && v > 0).map(([, v]) => v);
+  if (vals.length) heatLegend(host, Math.min(...vals), Math.max(...vals), "Fewer");
+}
+
+// Calendar heatmap: one square per day, weeks as columns, so crowded deadline days
+// stand out the way they would on a wall calendar.
+export function calendarHeat(host, byDay, { start, weeks = 13, today = "", valueLabel = "deadlines" } = {}) {
+  host.innerHTML = "";
+  const first = new Date(start + "T12:00:00");
+  first.setDate(first.getDate() - first.getDay());
+  const padL = 26, padT = 18, gap = 3;
+  const w = host.clientWidth || 420;
+  const s = Math.max(9, Math.min(30, (w - padL - gap * weeks) / weeks));
+  const svg = el("svg", { viewBox: `0 0 ${padL + weeks * (s + gap)} ${padT + 7 * (s + gap)}`, role: "img", "aria-label": "Deadlines per day" }, host);
+  svg.style.maxWidth = `${padL + weeks * (s + gap)}px`;
+  ["Sun", "", "Tue", "", "Thu", "", "Sat"].forEach((d, i) => d && (el("text", { x: 0, y: padT + i * (s + gap) + s * 0.75, class: "tick" }, svg).textContent = d));
+  const days = [];
+  for (let i = 0; i < weeks * 7; i++) {
+    const d = new Date(first); d.setDate(first.getDate() + i);
+    days.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`);
+  }
+  const bin = quantileBins(days.map((k) => byDay[k] || 0));
+  let lastMonth = "";
+  days.forEach((k, i) => {
+    const c = Math.floor(i / 7), r = i % 7, x = padL + c * (s + gap), y = padT + r * (s + gap);
+    if (r === 0 && k.slice(0, 7) !== lastMonth) {
+      lastMonth = k.slice(0, 7);
+      el("text", { x, y: 11, class: "tick" }, svg).textContent = new Date(k + "T12:00:00").toLocaleDateString("en-US", { month: "short" });
+    }
+    const v = byDay[k] || 0, past = today && k < today;
+    const rect = el("rect", { x, y, width: s, height: s, rx: 3, fill: past ? "transparent" : heatFill(bin(v)), class: k === today ? "today" : "" }, svg);
+    if (!past) hookTip(rect, new Date(k + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }), [`${v.toLocaleString()} ${valueLabel}`]);
+  });
+  const vals = days.filter((k) => !today || k >= today).map((k) => byDay[k] || 0).filter(Boolean);
+  if (vals.length) heatLegend(host, Math.min(...vals), Math.max(...vals), "Quiet");
+}
+
 export function card(title, sub) {
   const d = document.createElement("div");
   d.className = "card";

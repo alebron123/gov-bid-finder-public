@@ -1,0 +1,44 @@
+/* Pitch deck: one full-screen slide at a time, built on the app's tokens. */
+body.deck{min-height:100vh;overflow-x:hidden}
+.progress{position:fixed;top:0;left:0;right:0;height:3px;background:var(--grid);z-index:30}
+.progress span{display:block;height:100%;background:var(--series-1);width:0;transition:width .25s}
+.slide{display:none;min-height:100vh;padding:clamp(28px,7vh,80px) clamp(20px,8vw,120px) 90px;max-width:1280px;margin:0 auto;flex-direction:column;justify-content:center}
+.slide.active{display:flex;animation:rise .35s ease}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.kicker{text-transform:uppercase;letter-spacing:.09em;font-size:13px;font-weight:650;color:var(--series-1);margin:0 0 14px}
+.huge{font-size:clamp(64px,13vw,168px);line-height:.95;letter-spacing:-0.05em;font-weight:760;margin:0 0 22px}
+.slide h2{font-size:clamp(30px,4.6vw,58px);line-height:1.06;letter-spacing:-0.03em;font-weight:720;margin:0 0 28px}
+.accent{color:var(--series-1)}
+.big{font-size:clamp(17px,2vw,24px);line-height:1.45;max-width:900px;margin:0 0 16px}
+.foot{position:absolute;bottom:76px;color:var(--muted);font-size:13px}
+.slide{position:relative}
+kbd{border:1px solid var(--border);border-bottom-width:2px;border-radius:5px;padding:0 6px;font-family:inherit}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin:0 0 28px}
+.stats div{background:var(--surface-1);border:1px solid var(--border);border-radius:14px;padding:20px 22px}
+.stats b{display:block;font-size:clamp(34px,4.4vw,56px);letter-spacing:-0.03em;line-height:1.05;font-weight:720;font-variant-numeric:tabular-nums}
+.stats span{color:var(--text-secondary);font-size:15px}
+.flow{list-style:none;padding:0;margin:0 0 26px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;counter-reset:f}
+.flow li{background:var(--surface-1);border:1px solid var(--border);border-radius:14px;padding:20px 22px;counter-increment:f;position:relative}
+.flow li::before{content:counter(f);position:absolute;top:16px;right:18px;font-size:13px;color:var(--muted);font-weight:650}
+.flow b{display:block;font-size:22px;margin-bottom:6px}
+.flow span{color:var(--text-secondary);font-size:15.5px;line-height:1.45}
+.flow em{font-style:normal;font-weight:650;color:var(--text-primary)}
+.demo-steps{font-size:clamp(18px,2.1vw,26px);line-height:1.7;margin:0 0 28px;padding-left:1.3em}
+.tiers{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin:0 0 22px}
+.tiers .card{padding:22px 24px;border-radius:14px}
+.tiers .card.paid{border:2px solid var(--series-1)}
+.tiers h3{font-size:22px;margin:8px 0 6px}
+.tiers p{color:var(--text-secondary);font-size:15.5px;margin:0}
+.badge{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--series-1)}
+.badge.free{color:var(--good)}
+.map-card{padding:22px;max-width:760px}
+.deck-nav{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);display:flex;gap:10px;align-items:center;background:var(--surface-1);border:1px solid var(--border);border-radius:12px;padding:6px 10px;z-index:30}
+.deck-nav a{text-decoration:none;font-size:13px}
+@media (max-width:760px){
+  .slide{padding:40px 18px 100px}
+  .foot{bottom:84px}
+}
+@media print{
+  .deck-nav,.progress{display:none}
+  .slide{display:flex !important;page-break-after:always;min-height:100vh}
+}

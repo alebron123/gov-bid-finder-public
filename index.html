@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Gov Bid Finder — open US government contract opportunities</title>
 <meta name="description" content="Search every open US federal and Florida state contract opportunity in one place.">
-<link rel="stylesheet" href="./styles.css?v=1790393670">
+<link rel="stylesheet" href="./styles.css?v=1792601000">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='11' fill='%232a78d6'/></svg>">
 </head>
 <body>
@@ -21,14 +21,35 @@
   </nav>
   <div class="spacer"></div>
   <span class="pill" id="pill-data">loading…</span>
+  <a class="btn pitch-btn" href="./pitch.html">Pitch</a>
   <button class="icon-btn" id="theme-toggle" title="Toggle light / dark">◐</button>
 </header>
 
 <main>
   <section class="panel active" id="panel-dashboard">
-    <div class="hero" style="padding:26px 4px 20px">
-      <h1>Governments buy ordinary things. Almost nobody bids.</h1>
-      <p class="lede">Painting, landscaping, janitorial, IT support, catering, repairs. Every contract below is open right now, and most will draw a handful of bidders.</p>
+    <div class="hero hero-main">
+      <p class="eyebrow"><span class="live-dot"></span> Federal, State of Florida and Miami-Dade County bids in one place</p>
+      <h1>Governments buy ordinary things.<br><span class="accent">Almost nobody bids.</span></h1>
+      <p class="lede">Painting, landscaping, janitorial, IT support, catering, repairs. Every contract here is open right now, and most will draw only a handful of bidders. Pick a trade and see what is up for grabs.</p>
+      <div class="trade-chips" id="trade-chips">
+        <!-- WHY word stems ("roof", "landscap"): search is substring match, so the stem
+             also catches "roofs", "roof replacement", "landscape maintenance". -->
+        <button data-q="construction">Construction</button>
+        <button data-q="repair">Repairs</button>
+        <button data-q="electric">Electrical</button>
+        <button data-q="information technology">IT services</button>
+        <button data-q="guard">Security guards</button>
+        <button data-q="food service">Food service</button>
+        <button data-q="landscap">Landscaping</button>
+        <button data-q="roof">Roofing</button>
+        <button data-q="plumb">Plumbing</button>
+        <button data-q="hvac">HVAC</button>
+        <button data-q="translat">Translation</button>
+      </div>
+      <div class="hero-cta">
+        <button class="btn lg" id="cta-florida">Show me Florida</button>
+        <a class="btn ghost lg" href="./pitch.html">See the pitch &rarr;</a>
+      </div>
     </div>
     <div class="filters">
       <select id="d-state"><option value="">All states</option></select>
@@ -37,6 +58,7 @@
       <select id="d-days"><option value="">Any deadline</option><option value="7">Closing in 7 days</option><option value="30" selected>Closing in 30 days</option><option value="90">Closing in 90 days</option></select>
     </div>
     <div class="grid tiles" id="tiles"></div>
+    <div class="grid heat" id="heat"></div>
     <div class="grid charts" id="charts"></div>
   </section>
 
@@ -148,6 +170,13 @@
     </div></div>
 
     <div class="step"><div class="step-n">5</div><div class="step-b">
+      <h2>What is public, and what stays ours</h2>
+      <p><strong>Public and free: the search.</strong> Every contract, the map, the deadline calendar, the renewal calendar. The data is already public on SAM.gov, so charging for it means competing with free. Keeping it open is how contractors find us, and it is the live demo of what we can do.</p>
+      <p><strong>Ours: the matching and the outreach.</strong> Which companies fit which contract, their contact details, every email sent and every reply. That list improves with each email and is the part nobody can copy from SAM.gov.</p>
+      <p><strong>Paid: the agent working for one company.</strong> We start by running it ourselves for the first ten Miami contractors, reviewing every email before it goes out. Self-serve sign-up comes after we know which emails get replies.</p>
+    </div></div>
+
+    <div class="step"><div class="step-n">6</div><div class="step-b">
       <h2>What the numbers have to look like</h2>
       <div class="card" style="margin-top:10px">
         <table class="data">
@@ -158,13 +187,13 @@
       </div>
     </div></div>
 
-    <div class="step"><div class="step-n">6</div><div class="step-b">
+    <div class="step"><div class="step-n">7</div><div class="step-b">
       <h2>Why this is defensible</h2>
       <p>Federal contract data is free, so nobody can build a business on it alone. The moat is the local data: Miami-Dade County, the City of Miami, the school district, the water and sewer department. Each has its own portal and no bulk download, which is exactly why nobody aggregates them. It is tedious, and tedious is what automation is for.</p>
       <p>The second moat is the renewal calendar. Knowing a contract expires in eight months is worth more than knowing one closes on Friday, because eight months is enough time to prepare. Nobody sells that to small contractors.</p>
     </div></div>
 
-    <div class="step"><div class="step-n">7</div><div class="step-b">
+    <div class="step"><div class="step-n">8</div><div class="step-b">
       <h2>Who we are competing with</h2>
       <p>GovWin from Deltek costs about $29,000 a year and serves roughly 5,800 customers. GovSpend runs $7,300 to $24,500. GovTribe starts at $1,350. All of them are built for companies that already bid and have someone whose job is bidding.</p>
       <p>In three months of award data, more than ten thousand different companies won federal work, and the median one took about $500,000. Hundreds of thousands more are registered and never win anything. Nobody serves them, because a $29,000 product cannot be sold to a roofer. That gap is the business.</p>
@@ -216,6 +245,6 @@
   <div class="dlg-body" id="dlg-body"></div>
 </dialog>
 <div class="tooltip" id="tip"></div>
-<script type="module" src="./app.js?v=1792600000"></script>
+<script type="module" src="./app.js?v=1792601000"></script>
 </body>
 </html>
