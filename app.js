@@ -29,13 +29,19 @@ const agencyName = (raw) => {
 };
 const titleCase = (s) => String(s || "").toLowerCase().replace(/\b[a-z]/g, (c) => c.toUpperCase()).replace(/\bOf\b/g, "of").replace(/\bThe\b/g, "the");
 
-const theme = localStorage.getItem("theme");
+// WHY: storage can throw (private windows, sandboxed frames, blocked site data).
+// An uncaught throw here would stop the whole module before anything renders.
+const store = {
+  get: (k) => { try { return localStorage.getItem(k); } catch { return null; } },
+  set: (k, v) => { try { localStorage.setItem(k, v); } catch {} },
+};
+const theme = store.get("theme");
 if (theme) document.documentElement.dataset.theme = theme;
 $("#theme-toggle").onclick = () => {
   const cur = document.documentElement.dataset.theme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
   const next = cur === "dark" ? "light" : "dark";
   document.documentElement.dataset.theme = next;
-  localStorage.setItem("theme", next);
+  store.set("theme", next);
   if (currentTab() === "dashboard") renderDashboard();
 };
 const currentTab = () => document.querySelector("[role=tab][aria-selected=true]").dataset.tab;
@@ -392,8 +398,8 @@ function composeFor(r, v, deadline) {
 }
 
 // ---- shortlist: contracts worth coming back to ----
-const saved = new Set(JSON.parse(localStorage.getItem("saved") || "[]"));
-const persistSaved = () => localStorage.setItem("saved", JSON.stringify([...saved]));
+const saved = new Set((() => { try { return JSON.parse(store.get("saved") || "[]"); } catch { return []; } })());
+const persistSaved = () => store.set("saved", JSON.stringify([...saved]));
 function toggleSaved(id) {
   if (saved.has(id)) saved.delete(id); else saved.add(id);
   persistSaved();
