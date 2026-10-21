@@ -180,6 +180,11 @@ rect.today{stroke:var(--series-2);stroke-width:2}
   nav.tabs button{padding:7px 8px}
   .pill{font-size:11.5px;padding:3px 8px}
 }
+/* WHY: with the Agent tab and a shortlist count, the header no longer fits one
+   line below ~940px; the data date is also on the dashboard tiles and About tab. */
+@media (max-width: 940px) and (min-width: 761px){
+  #pill-data{display:none}
+}
 
 /* Mobile */
 @media (max-width: 760px){

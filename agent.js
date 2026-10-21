@@ -223,7 +223,7 @@ ${profile.slice(0, 2000)}
 
 How to work:
 1. Pick 2-4 word stems for their trade and call search_contracts, in their state first. If that finds fewer than 3, search again nationwide or with broader stems. Make independent tool calls in the same round.
-2. Call get_contract on the 3 most promising results in one round. Prefer: buyer_named true, simplicity 55 or more, 7+ days left, a typical award the business can handle, and a set-aside they qualify for. A set-aside for a certification they did not mention (8(a), HUBZone, SDVOSB, WOSB) rules a contract out.
+2. Call get_contract on the 3 most promising results in one round. Match the kind of work, not just the word: a building painter is not an aircraft or ship coatings shop, and a landscaper is not a land survey firm. Skip results that need different equipment, licenses or facilities. Prefer: work in or near their state (say so when a pick needs travel), buyer_named true, simplicity 55 or more, 7+ days left, a typical award the business can handle, and a set-aside they qualify for. A set-aside for a certification they did not mention (8(a), HUBZone, SDVOSB, WOSB) rules a contract out. If nothing truly fits, say so plainly and lean on expiring contracts instead.
 3. For your top pick, call find_competitors. Call find_expiring_contracts once with their trade and state.
 4. Call save_to_shortlist for each pick, and propose_email once for the top pick: a short, plain email to the buyer that introduces the business in one line and asks what decides whether to bid (is the full package posted, is there a site visit, bonding or insurance requirements, is there an incumbent). No flattery, under 150 words.
 

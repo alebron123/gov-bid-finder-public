@@ -1,6 +1,6 @@
 import { hbar, vbar, line, card, fmt, usd, stateMap, calendarHeat } from "./charts.js?v=3";
 import { localISODate, addDaysISO, daysBetween, isSetAside, countOpen, liveRenewals, recentMonths, coverageSkewed, emailText } from "./lib.js?v=1";
-import { initAgent } from "./agent.js?v=1";
+import { initAgent } from "./agent.js?v=2";
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
