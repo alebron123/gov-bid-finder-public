@@ -135,28 +135,37 @@ const TILE = {
   OK: [3, 6], LA: [4, 6], MS: [5, 6], AL: [6, 6], GA: [7, 6],
   HI: [0, 7], TX: [3, 7], FL: [8, 7], PR: [10, 7],
 };
-export function stateMap(host, counts, { selected = "", names = {}, notes = {}, valueLabel = "open notices", onClick = null } = {}) {
+// Any tile grid: `tiles` maps a key to [label, col, row]. Used for US states and
+// Florida counties.
+export function tileMap(host, counts, tiles, { selected = "", names = {}, notes = {}, valueLabel = "open notices", onClick = null, maxTile = 54, ariaLabel = "Map" } = {}) {
   host.innerHTML = "";
-  const cols = 11, rows = 8, gap = 4;
+  const cells = Object.values(tiles);
+  const cols = Math.max(...cells.map((t) => t[1])) + 1, rows = Math.max(...cells.map((t) => t[2])) + 1, gap = 4;
   const w = host.clientWidth || 520;
-  const s = Math.min(54, (w - gap * (cols - 1)) / cols);
-  const svg = el("svg", { viewBox: `0 0 ${cols * (s + gap)} ${rows * (s + gap)}`, role: "img", "aria-label": "Open notices by state" }, host);
+  const s = Math.min(maxTile, (w - gap * (cols - 1)) / cols);
+  const svg = el("svg", { viewBox: `0 0 ${cols * (s + gap)} ${rows * (s + gap)}`, role: "img", "aria-label": ariaLabel }, host);
   svg.style.maxWidth = `${cols * (s + gap)}px`;
-  const bin = quantileBins(Object.values(counts));
-  for (const [st, [c, r]] of Object.entries(TILE)) {
-    const v = counts[st] || 0, b = bin(v);
+  const bin = quantileBins(Object.keys(tiles).map((k) => counts[k] || 0));
+  for (const [key, [label, c, r]] of Object.entries(tiles)) {
+    const v = counts[key] || 0, b = bin(v);
     const g = el("g", { class: "map-tile", style: onClick && v ? "cursor:pointer" : "" }, svg);
     const x = c * (s + gap), y = r * (s + gap);
-    el("rect", { x, y, width: s, height: s, rx: 6, fill: heatFill(b), class: st === selected ? "sel" : "" }, g);
+    el("rect", { x, y, width: s, height: s, rx: Math.min(6, s / 6), fill: heatFill(b), class: key === selected ? "sel" : "" }, g);
     const ink = b >= 3 ? "#fff" : "var(--text-primary)";
-    el("text", { x: x + s / 2, y: y + s / 2 - 2, "text-anchor": "middle", class: "map-code", fill: ink }, g).textContent = st;
-    if (s >= 34) el("text", { x: x + s / 2, y: y + s / 2 + 13, "text-anchor": "middle", class: "map-n", fill: ink }, g).textContent = v ? fmt(v) : "–";
-    hookTip(g, names[st] || st, [`${v.toLocaleString()} ${valueLabel}`, ...(notes[st] ? [notes[st]] : [])]);
-    if (onClick && v) g.addEventListener("click", () => onClick(st));
+    const small = s < 34;
+    const code = el("text", { x: x + s / 2, y: y + s / 2 + (small ? 4 : -2), "text-anchor": "middle", class: "map-code", fill: ink }, g);
+    code.textContent = label;
+    if (small) code.setAttribute("style", `font-size:${Math.max(7, s * 0.3)}px`);
+    else el("text", { x: x + s / 2, y: y + s / 2 + 13, "text-anchor": "middle", class: "map-n", fill: ink }, g).textContent = v ? fmt(v) : "–";
+    hookTip(g, names[key] || key, [`${v.toLocaleString()} ${valueLabel}`, ...(notes[key] ? [notes[key]] : [])]);
+    if (onClick && v) g.addEventListener("click", () => onClick(key));
   }
-  const vals = Object.entries(counts).filter(([k, v]) => TILE[k] && v > 0).map(([, v]) => v);
+  const vals = Object.keys(tiles).map((k) => counts[k] || 0).filter((v) => v > 0);
   if (vals.length) heatLegend(host, Math.min(...vals), Math.max(...vals), "Fewer");
 }
+
+const STATE_TILES = Object.fromEntries(Object.entries(TILE).map(([k, [c, r]]) => [k, [k, c, r]]));
+export const stateMap = (host, counts, opts = {}) => tileMap(host, counts, STATE_TILES, { ariaLabel: "Open notices by state", ...opts });
 
 // Calendar heatmap: one square per day, weeks as columns, so crowded deadline days
 // stand out the way they would on a wall calendar.

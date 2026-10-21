@@ -9,7 +9,7 @@
 // NAICS names) is carried over too: it changes slowly and comes from USAspending.
 import { createReadStream, readFileSync, writeFileSync } from "node:fs";
 import { parseArgs } from "node:util";
-import { CsvParser, cleanText, deadlineDate, isUS, simplicity, score } from "./sam-lib.js";
+import { F, CsvParser, cleanText, deadlineDate, isUS, simplicity, score, decodeRow, encodeRows, tallyBySource } from "./sam-lib.js";
 import { localISODate } from "../lib.js";
 
 const { values: args } = parseArgs({ options: {
@@ -18,8 +18,6 @@ const { values: args } = parseArgs({ options: {
 if (!args.csv) { console.error("usage: build-sam.js --csv <ContractOpportunitiesFullCSV.csv> [--data data.json]"); process.exit(2); }
 const today = args.today || localISODate();
 
-// Row layout shared with app.js (F there).
-const F = { ID: 0, TITLE: 1, DEPT: 2, TYPE: 3, SA: 4, DUE: 5, NAICS: 6, STATE: 7, CITY: 8, LINK: 9, SRC: 10, SNIP: 11, POSTED: 12, SUBTIER: 13, CONTACT: 14, EMAIL: 15, CNAME: 16, SCORE: 17, SIMP: 18, VALUE: 19, BENCH: 20, US: 21 };
 // WHY 260: matches the snippet length of the original snapshot; enough for two
 // lines on a card while keeping data.json near 10 MB.
 const SNIPPET_CHARS = 260;
@@ -32,10 +30,7 @@ const pd = prev.meta.dicts;
 const bench = { ...(prev.meta.naics_bench || {}) };
 for (const r of prev.rows) if (pd.sources[r[F.SRC]] === "sam.gov" && r[F.NAICS] && !(r[F.NAICS] in bench)) bench[r[F.NAICS]] = [r[F.VALUE], r[F.BENCH]];
 
-// Decode the previous rows' dictionary indexes so they can be re-encoded below.
-const decode = (r) => ({ ...Object.fromEntries(Object.entries(F).map(([k, i]) => [k, r[i]])),
-  DEPT: pd.depts[r[F.DEPT]], TYPE: pd.types[r[F.TYPE]], SA: pd.setasides[r[F.SA]] ?? "", SRC: pd.sources[r[F.SRC]] });
-const carried = prev.rows.map(decode).filter((r) => r.SRC !== "sam.gov" && r.DUE >= today);
+const carried = prev.rows.map((r) => decodeRow(r, pd)).filter((r) => r.SRC !== "sam.gov" && r.DUE >= today);
 
 // ---- read the extract ----
 const fresh = new Map();
@@ -78,21 +73,15 @@ for (const rec of parser.end()) take(rec);
 if (!header || !("NoticeId" in col) || !("ResponseDeadLine" in col)) { console.error("Not a SAM.gov opportunities extract: missing NoticeId/ResponseDeadLine columns."); process.exit(1); }
 
 // ---- encode ----
-const rows = [...fresh.values(), ...carried];
-const dict = (key) => { const vals = [...new Set(rows.map((r) => r[key] ?? ""))]; const idx = new Map(vals.map((v, i) => [v, i])); return { vals, idx }; };
-const dd = { depts: dict("DEPT"), types: dict("TYPE"), setasides: dict("SA"), sources: dict("SRC") };
-const KEY_OF = { DEPT: "depts", TYPE: "types", SA: "setasides", SRC: "sources" };
-const encoded = rows.map((r) => Object.entries(F).sort((a, b) => a[1] - b[1]).map(([k]) => KEY_OF[k] ? dd[KEY_OF[k]].idx.get(r[k] ?? "") : r[k]));
-
-const bySource = [...rows.reduce((m, r) => m.set(r.SRC, (m.get(r.SRC) || 0) + 1), new Map())].map(([label, value]) => ({ label, value }));
+const all = [...fresh.values(), ...carried];
+const { rows: encoded, dicts } = encodeRows(all);
 const out = {
   meta: {
     ...prev.meta,
-    built_at: new Date().toISOString(), today, total: rows.length, by_source: bySource,
-    dicts: Object.fromEntries(Object.entries(dd).map(([k, v]) => [k, v.vals])),
+    built_at: new Date().toISOString(), today, total: all.length, by_source: tallyBySource(all), dicts,
     naics_bench: bench,
   },
   rows: encoded,
 };
 writeFileSync(args.data, JSON.stringify(out));
-console.log(`Read ${seen.toLocaleString()} notices; ${fresh.size.toLocaleString()} federal open as of ${today}; carried ${carried.length} state/county rows; wrote ${rows.length.toLocaleString()} rows to ${args.data}.`);
+console.log(`Read ${seen.toLocaleString()} notices; ${fresh.size.toLocaleString()} federal open as of ${today}; carried ${carried.length} state/county rows; wrote ${all.length.toLocaleString()} rows to ${args.data}.`);

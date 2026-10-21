@@ -45,5 +45,96 @@ export const coverageSkewed = (months) => {
   return median > 0 && months[months.length - 1].value > COVERAGE_SKEW_RATIO * median;
 };
 
+// ---- the visitor's profile, from the welcome quiz ----
+// Trades offered in the quiz: label and the search stems that find them.
+// WHY stems: search is substring match, so "roof" also catches "roofing" and "roofs".
+export const TRADES = [
+  { id: "construction", label: "Construction", stems: ["construction", "renovation"] },
+  { id: "painting", label: "Painting", stems: ["paint"] },
+  { id: "janitorial", label: "Janitorial & cleaning", stems: ["janitor", "custodial", "cleaning"] },
+  { id: "landscaping", label: "Landscaping & grounds", stems: ["landscap", "grounds maint", "mowing"] },
+  { id: "roofing", label: "Roofing", stems: ["roof"] },
+  { id: "hvac", label: "HVAC", stems: ["hvac", "air condition", "chiller"] },
+  { id: "plumbing", label: "Plumbing", stems: ["plumb"] },
+  { id: "electrical", label: "Electrical", stems: ["electric"] },
+  { id: "security", label: "Security guards", stems: ["guard", "security services"] },
+  { id: "food", label: "Food & catering", stems: ["food service", "catering", "meals"] },
+  { id: "it", label: "IT & tech support", stems: ["information technology", "it support", "software"] },
+  { id: "transport", label: "Trucking & transport", stems: ["transportation", "hauling", "trucking"] },
+  { id: "consulting", label: "Consulting & training", stems: ["consult", "training"] },
+  { id: "medical", label: "Medical & health", stems: ["medical", "health"] },
+];
+export const CERTS = [
+  { id: "sbe", label: "Miami-Dade SBE" },
+  { id: "osd", label: "Florida minority or women-owned (OSD)" },
+  { id: "8a", label: "SBA 8(a)" },
+  { id: "hubzone", label: "HUBZone" },
+  { id: "sdvosb", label: "Service-disabled veteran-owned" },
+  { id: "wosb", label: "Women-owned (WOSB)" },
+];
+
+// One regex for a set of stems, anchored at the start of a word, so "construction"
+// does not match "reconstruction" and "paint" still matches "painting".
+export const stemMatcher = (stems) => {
+  const parts = stems.map((s) => String(s).toLowerCase().trim()).filter(Boolean).map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  if (!parts.length) return () => true;
+  const re = new RegExp(`(?:^|[^a-z0-9])(?:${parts.join("|")})`);
+  return (text) => re.test(text);
+};
+
+export const profileStems = (p) => {
+  const stems = (p?.trades || []).flatMap((id) => TRADES.find((t) => t.id === id)?.stems || []);
+  const other = String(p?.other || "").toLowerCase().split(/[,;]/).map((s) => s.trim()).filter((s) => s.length > 2);
+  return [...new Set([...stems, ...other])];
+};
+
+// Which federal set-asides a profile may bid on. "Open to all" and plain small
+// business set-asides are always fine for a small business.
+export function setAsideAllowed(label, p) {
+  if (!label) return true;
+  const l = label.toLowerCase(), c = new Set(p?.certs || []);
+  if (/8\(a\)/.test(l)) return c.has("8a");
+  if (/hubzone/.test(l)) return c.has("hubzone");
+  if (/service-disabled|sdvosb|veteran/.test(l)) return c.has("sdvosb");
+  if (/women|wosb|edwosb/.test(l)) return c.has("wosb");
+  if (/indian|native/.test(l)) return false;
+  return p?.kind !== "nonprofit";
+}
+
+// The profile in one paragraph, for the agent's text box.
+export function profileToText(p) {
+  if (!p) return "";
+  const who = p.kind === "nonprofit" ? "a nonprofit / community organization" : p.kind === "exploring" ? "someone exploring government work" : "a small business";
+  const trades = (p.trades || []).map((id) => TRADES.find((t) => t.id === id)?.label).filter(Boolean);
+  if (p.other) trades.push(p.other);
+  const where = p.county === "outside" ? "outside Florida" : p.county ? `${p.county} County, Florida` : "Florida";
+  const certs = (p.certs || []).map((id) => CERTS.find((c) => c.id === id)?.label).filter(Boolean);
+  return [
+    `We are ${who} in ${where}${trades.length ? `, working in ${trades.join(", ").toLowerCase()}` : ""}.`,
+    p.size ? `Team size: ${p.size} people.` : "",
+    p.maxJob ? `We can take on jobs up to about $${Number(p.maxJob).toLocaleString("en-US")}.` : "",
+    certs.length ? `Certifications: ${certs.join(", ")}.` : "No special certifications.",
+    "Find us contracts and grants we can realistically win.",
+  ].filter(Boolean).join(" ");
+}
+
+// ---- grants ----
+// WHY: most open federal grants open to small businesses are NIH research awards
+// (activity codes like R01, R21, SBIR). Useful to labs, noise to a Miami bakery.
+const RESEARCH_RE = /\b(R0[0-9]|R1[0-9]|R2[0-9]|R3[0-9]|R4[0-9]|R6[01]|U0[0-9]|U2[0-9]|U4[0-9]|UG3|UH3|K0[0-9]|K2[0-9]|P0[0-9]|P2[0-9]|P5[0-9]|F3[0-9]|T3[0-9]|SBIR|STTR)\b|clinical trial/i;
+export const isResearchGrant = (g) => RESEARCH_RE.test(g.title) || /national institutes of health/i.test(g.agency);
+
+export function filterGrants(grants, { who = "", category = "", q = "", hideResearch = true, today = "" } = {}) {
+  const terms = String(q).toLowerCase().split(/\s+/).filter(Boolean);
+  return grants.filter((g) => {
+    if (today && g.closes && g.closes < today) return false;
+    if (who && !g.eligible.includes(who)) return false;
+    if (category && !g.categories.includes(category)) return false;
+    if (hideResearch && isResearchGrant(g)) return false;
+    if (terms.length) { const h = `${g.title} ${g.desc} ${g.agency} ${g.categories.join(" ")}`.toLowerCase(); if (!terms.every((t) => h.includes(t))) return false; }
+    return true;
+  });
+}
+
 // The drafted outreach email as plain text, ready to paste into any mail client.
 export const emailText = ({ to, su, bo }) => [to ? `To: ${to}` : "", `Subject: ${su}`, "", bo].filter((l, i) => i > 0 || l).join("\n");

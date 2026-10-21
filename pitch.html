@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>govbid Pitch</title>
 <meta name="description" content="A five-minute pitch for govbid, an AI agent that finds government contracts for Miami's small businesses.">
-<link rel="stylesheet" href="./styles.css?v=1792603100">
+<link rel="stylesheet" href="./styles.css?v=1792604000">
 <link rel="stylesheet" href="./pitch.css?v=2">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='11' fill='%232a78d6'/></svg>">
 </head>
@@ -15,7 +15,7 @@
 <section class="slide active" data-title="Title">
   <p class="kicker">Impact Miami 2.0 · Agents for real people</p>
   <h1 class="huge">govbid</h1>
-  <p class="big">An AI agent that finds government contracts for Miami's small businesses, and makes the first move for them.</p>
+  <p class="big">An AI agent that finds government contracts and grants for Miami's small businesses and community groups, and makes the first move for them.</p>
   <p class="foot">Press <kbd>→</kbd> or click to advance</p>
 </section>
 
@@ -34,16 +34,17 @@
   <p class="kicker">Why Miami</p>
   <h2>The money is here. The bidders aren't.</h2>
   <div class="stats">
-    <div><b data-stat="fl">…</b><span>open contracts with work in Florida</span></div>
+    <div><b data-stat="mdcBids">…</b><span>Miami-Dade County bids open right now, live from the county</span></div>
+    <div><b data-stat="fl">…</b><span>open government contracts with work in Florida</span></div>
     <div><b data-stat="flRenewValue">…</b><span>in Florida federal contracts expiring within a year</span></div>
-    <div><b data-stat="flRenewCount">…</b><span>of those contracts, each held by one company today</span></div>
+    <div><b data-stat="grants">…</b><span>federal grants open to small businesses and nonprofits</span></div>
   </div>
-  <p class="big muted">A contract that expires in eight months is winnable. A local roofer just has to know it exists, and who to call, before the incumbent renews it.</p>
+  <p class="big muted">Parks pool repairs, a fire station's doors, a summer food program: this is ordinary work a Miami firm can do. The county even names the buyer on work it plans to buy. Most small businesses never see it.</p>
 </section>
 
 <section class="slide" data-title="Map">
   <p class="kicker">Where the work is</p>
-  <h2>Open contracts, by state</h2>
+  <h2>Florida, county by county</h2>
   <div class="card map-card"><div class="plot" id="deck-map"></div></div>
 </section>
 
@@ -51,8 +52,8 @@
   <p class="kicker">What we built</p>
   <h2>An agent that does the legwork</h2>
   <ol class="flow">
-    <li><b>Listen</b><span>The owner describes the business in plain words: trade, city, size, certifications.</span></li>
-    <li><b>Search &amp; read</b><span>It searches <em data-stat="open">…</em> open contracts, reads the promising notices, and rules out set-asides the business can't bid on.</span></li>
+    <li><b>Listen</b><span>A five-question welcome quiz, or one plain sentence: trade, county, size, certifications.</span></li>
+    <li><b>Search &amp; read</b><span>Their county first, then Florida: <em data-stat="open">…</em> open contracts and <em data-stat="grants">…</em> grants. It reads the promising ones and rules out set-asides they can't bid on.</span></li>
     <li><b>Check the field</b><span>It sees who already wins this work among <em data-stat="companies">…</em> companies, and which contracts expire soon.</span></li>
     <li><b>Act, with approval</b><span>It saves its picks and drafts the email to the buyer. The owner approves, and it lands in their Gmail as a draft.</span></li>
   </ol>
@@ -95,7 +96,7 @@
   <p class="kicker">Impact</p>
   <h2>We count one thing: <span class="accent">dollars won by local businesses.</span></h2>
   <p class="big">Every contract a Miami small business wins is public money that stays in Miami: payroll, jobs, and a track record that makes the next bid easier.</p>
-  <p class="big muted">Next: City of Miami, Miami-Dade schools and Water &amp; Sewer feeds, plus Claude explaining every notice in plain English and drafting the bid.</p>
+  <p class="big muted">It points every business to free local help: the Florida APEX Accelerator at FIU, Miami-Dade SBE certification, and the county supplier portal. Next: City of Miami, Miami-Dade schools and Water &amp; Sewer feeds, and texting the agent.</p>
   <p class="foot">govbid · thank you</p>
 </section>
 
@@ -106,6 +107,6 @@
   <a class="icon-btn" href="./">Back to app</a>
 </nav>
 <div class="tooltip" id="tip"></div>
-<script type="module" src="./pitch.js?v=2"></script>
+<script type="module" src="./pitch.js?v=3"></script>
 </body>
 </html>

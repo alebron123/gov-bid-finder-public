@@ -1,5 +1,23 @@
-// Pure pieces of the SAM.gov rebuild: CSV parsing, text cleanup and scoring.
-// Kept free of file and network access so the tests can drive them directly.
+// Pure pieces of the data rebuild: row encoding, CSV parsing, text cleanup and
+// scoring. Kept free of file and network access so the tests can drive them directly.
+
+// Row layout shared with app.js (F there).
+export const F = { ID: 0, TITLE: 1, DEPT: 2, TYPE: 3, SA: 4, DUE: 5, NAICS: 6, STATE: 7, CITY: 8, LINK: 9, SRC: 10, SNIP: 11, POSTED: 12, SUBTIER: 13, CONTACT: 14, EMAIL: 15, CNAME: 16, SCORE: 17, SIMP: 18, VALUE: 19, BENCH: 20, US: 21 };
+const DICT_OF = { DEPT: "depts", TYPE: "types", SA: "setasides", SRC: "sources" };
+const FIELDS = Object.entries(F).sort((a, b) => a[1] - b[1]).map(([k]) => k);
+
+// data.json stores agency, type, set-aside and source as indexes into meta.dicts.
+export const decodeRow = (r, dicts) => Object.fromEntries(FIELDS.map((k, i) => [k, DICT_OF[k] ? (dicts[DICT_OF[k]][r[i]] ?? "") : r[i]]));
+export function encodeRows(objs) {
+  const dicts = {}, index = {};
+  for (const [k, name] of Object.entries(DICT_OF)) {
+    dicts[name] = [...new Set(objs.map((o) => o[k] ?? ""))];
+    index[k] = new Map(dicts[name].map((v, i) => [v, i]));
+  }
+  const rows = objs.map((o) => FIELDS.map((k) => DICT_OF[k] ? index[k].get(o[k] ?? "") : o[k]));
+  return { rows, dicts };
+}
+export const tallyBySource = (objs) => [...objs.reduce((m, o) => m.set(o.SRC, (m.get(o.SRC) || 0) + 1), new Map())].map(([label, value]) => ({ label, value }));
 
 // Streaming RFC 4180 CSV parser: feed decoded text in chunks, get whole records
 // back. Quoted fields may span chunks and contain commas, quotes and newlines

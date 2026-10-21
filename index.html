@@ -5,16 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Gov Bid Finder</title>
 <meta name="description" content="Search every open US federal and Florida state contract opportunity in one place.">
-<link rel="stylesheet" href="./styles.css?v=1792603100">
+<link rel="stylesheet" href="./styles.css?v=1792604000">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='11' fill='%232a78d6'/></svg>">
 </head>
 <body>
 <header class="top">
   <div class="brand"><span class="dot"></span> Gov Bid Finder</div>
   <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="foryou" aria-selected="false">For you</button>
     <button role="tab" data-tab="dashboard" aria-selected="true">Dashboard</button>
     <button role="tab" data-tab="agent" aria-selected="false" class="tab-agent">Agent <span class="ai-badge">AI</span></button>
     <button role="tab" data-tab="search" aria-selected="false">Search</button>
+    <button role="tab" data-tab="grants" aria-selected="false">Grants</button>
     <button role="tab" data-tab="renewals" aria-selected="false">Renewals</button>
     <button role="tab" data-tab="saved" aria-selected="false">Shortlist</button>
     <button role="tab" data-tab="plan" aria-selected="false">Business plan</button>
@@ -27,9 +29,47 @@
 </header>
 
 <main>
+  <section class="panel" id="panel-foryou">
+    <div class="empty" id="portal-empty" hidden>
+      <p style="font-size:17px;margin:0 0 12px">Answer five quick questions and this page fills with contracts, grants and free local help for your business.</p>
+      <button type="button" class="btn lg edit-profile">Start</button>
+    </div>
+    <div id="portal" hidden>
+      <div class="portal-head">
+        <div>
+          <p class="eyebrow"><span class="live-dot"></span> Your portal</p>
+          <h1 id="portal-who">Your business</h1>
+        </div>
+        <div class="portal-head-acts">
+          <button type="button" class="btn lg" id="portal-agent">Have the agent work on this</button>
+          <button type="button" class="btn ghost edit-profile">Edit my answers</button>
+        </div>
+      </div>
+      <div class="grid tiles" id="portal-tiles"></div>
+      <div class="portal-grid">
+        <div class="card">
+          <p class="chart-title">Florida, county by county</p>
+          <p class="chart-sub" id="portal-map-sub"></p>
+          <div class="plot" id="portal-map"></div>
+        </div>
+        <div class="portal-side">
+          <div class="card">
+            <p class="chart-title">Free help near you</p>
+            <p class="chart-sub">Real local organizations. None of them charge to help you bid.</p>
+            <div class="help-list" id="portal-help"></div>
+          </div>
+        </div>
+      </div>
+      <div class="section-head"><h2 id="portal-list-title">Best matches for you</h2><button type="button" class="btn ghost" id="portal-clear" hidden>Show all of Florida</button></div>
+      <div class="results" id="portal-list"></div>
+      <div class="section-head"><h2>Grants you could apply for</h2><button type="button" class="btn ghost" id="portal-more-grants">See all grants</button></div>
+      <div class="results" id="portal-grants"></div>
+    </div>
+  </section>
+
   <section class="panel active" id="panel-dashboard">
     <div class="hero hero-main">
-      <p class="eyebrow"><span class="live-dot"></span> Federal, State of Florida and Miami-Dade County bids in one place</p>
+      <p class="eyebrow"><span class="live-dot"></span> Built for Miami: Miami-Dade County, State of Florida and federal bids in one place</p>
       <h1>Governments buy ordinary things.<br><span class="accent">Almost nobody bids.</span></h1>
       <p class="lede">Painting, landscaping, janitorial, IT support, catering, repairs. Every contract here is open right now, and most will draw only a handful of bidders. Pick a trade and see what is up for grabs.</p>
       <div class="trade-chips" id="trade-chips">
@@ -114,6 +154,23 @@
     <div class="small muted" id="s-count"></div>
     <div class="results" id="s-results"></div>
     <div style="text-align:center;margin-top:16px"><button class="btn ghost" id="s-more" hidden>Load more</button></div>
+  </section>
+
+  <section class="panel" id="panel-grants">
+    <div class="hero" style="padding:22px 4px 14px">
+      <h1 style="font-size:clamp(24px,3.2vw,36px)">Grants you can apply for</h1>
+      <p class="lede">Federal grants open to small businesses, nonprofits and individuals, refreshed daily from Grants.gov. Research grants for labs are hidden unless you ask for them.</p>
+    </div>
+    <div class="filters">
+      <input type="search" id="g-q" placeholder="Search: food, housing, youth, workforce, environment…">
+      <select id="g-who"><option value="">Anyone eligible</option><option value="small_business">Small businesses</option><option value="nonprofit">Nonprofits</option><option value="individual">Individuals</option></select>
+      <select id="g-cat"><option value="">All categories</option></select>
+      <select id="g-sort"><option value="closing">Closing soonest</option><option value="amount">Largest award</option></select>
+      <label class="small muted" style="display:flex;align-items:center;gap:5px"><input type="checkbox" id="g-research" checked> Hide research grants</label>
+    </div>
+    <div class="small muted" id="g-count"></div>
+    <div class="results" id="g-list"></div>
+    <div style="text-align:center;margin-top:16px"><button class="btn ghost" id="g-more" hidden>Load more</button></div>
   </section>
 
   <section class="panel" id="panel-renewals">
@@ -282,7 +339,49 @@
   </div>
   <div class="dlg-body" id="dlg-body"></div>
 </dialog>
+<dialog id="quiz" aria-labelledby="quiz-title">
+  <div class="quiz">
+    <div class="quiz-top"><span class="brand"><span class="dot"></span> govbid</span><div class="q-progress" id="q-progress"></div><button type="button" class="icon-btn" id="q-skip">Skip</button></div>
+    <section class="q-step">
+      <h2 id="quiz-title">Welcome. Who are you?</h2>
+      <p class="muted">Five quick questions, and we'll show you the public contracts, grants and free help that fit. Your answers stay in this browser.</p>
+      <div class="q-cards">
+        <label class="q-card"><input type="radio" name="q-kind" value="business" checked><strong>A small business</strong><span>I want government contracts</span></label>
+        <label class="q-card"><input type="radio" name="q-kind" value="nonprofit"><strong>A nonprofit or community group</strong><span>I want grants and contracts</span></label>
+        <label class="q-card"><input type="radio" name="q-kind" value="exploring"><strong>Just exploring</strong><span>Show me what's out there</span></label>
+      </div>
+    </section>
+    <section class="q-step" hidden>
+      <h2>What kind of work do you do?</h2>
+      <p class="muted">Pick everything that fits.</p>
+      <div class="q-picks" id="q-trades"></div>
+      <label for="q-other" class="small muted">Something else?</label>
+      <input id="q-other" placeholder="e.g. pressure washing, signage, tutoring">
+    </section>
+    <section class="q-step" hidden>
+      <h2>Where are you based?</h2>
+      <p class="muted">We show work in your county first, then South Florida, then the rest of the state.</p>
+      <select id="q-county" class="q-select" aria-label="County"></select>
+    </section>
+    <section class="q-step" hidden>
+      <h2>How big are you?</h2>
+      <div class="q-row">
+        <label for="q-size">People on the team</label>
+        <select id="q-size" class="q-select"><option value="">Choose</option><option>1-5</option><option>6-20</option><option>21-100</option><option>100+</option></select>
+        <label for="q-maxjob">Biggest job you could take on</label>
+        <select id="q-maxjob" class="q-select"><option value="">Choose</option><option value="25000">About $25,000</option><option value="100000">About $100,000</option><option value="500000">About $500,000</option><option value="2000000">$2 million or more</option></select>
+      </div>
+    </section>
+    <section class="q-step" hidden>
+      <h2>Any certifications?</h2>
+      <p class="muted">Some contracts are reserved for certified firms. None yet is fine: we'll show you how to get certified for free.</p>
+      <div class="q-picks" id="q-certs"></div>
+    </section>
+    <div class="q-hint small" id="q-hint" aria-live="polite"></div>
+    <div class="quiz-nav"><button type="button" class="btn ghost" id="q-back" hidden>Back</button><button type="button" class="btn lg" id="q-next">Next</button></div>
+  </div>
+</dialog>
 <div class="tooltip" id="tip"></div>
-<script type="module" src="./app.js?v=1792603000"></script>
+<script type="module" src="./app.js?v=1792604100"></script>
 </body>
 </html>

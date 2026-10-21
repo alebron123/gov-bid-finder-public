@@ -141,6 +141,47 @@ rect.today{stroke:var(--series-2);stroke-width:2}
 .heat-legend span{margin:0 5px}
 .heat-legend i{width:16px;height:10px;border-radius:2px;display:block}
 
+/* Portal ("For you") */
+.portal-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;padding:22px 4px 16px}
+.portal-head h1{font-size:clamp(24px,3.4vw,38px);letter-spacing:-0.025em;margin:10px 0 0;line-height:1.15}
+.portal-head-acts{display:flex;gap:8px;flex-wrap:wrap}
+.portal-grid{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:14px;margin-bottom:8px;align-items:start}
+.help-list{display:flex;flex-direction:column;gap:8px}
+.help-card{display:flex;flex-direction:column;gap:3px;text-decoration:none;color:var(--text-primary);padding:12px 14px;background:var(--page)}
+.help-card:hover{border-color:var(--series-1)}
+.help-card span{color:var(--text-secondary);font-size:13px;line-height:1.45}
+.help-card em{font-style:normal;color:var(--series-1);font-size:12.5px;font-weight:600}
+.section-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:22px 0 10px;flex-wrap:wrap}
+.section-head h2{font-size:19px;margin:0;letter-spacing:-0.01em}
+.grant .tag.money{color:var(--text-primary);font-weight:600}
+.grant-acts{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.grant-acts .btn{padding:6px 12px;font-size:12.5px}
+/* Welcome quiz */
+#quiz{max-width:640px}
+.quiz{padding:20px 24px 22px;display:flex;flex-direction:column;gap:12px}
+.quiz-top{display:flex;align-items:center;gap:12px}
+.q-progress{flex:1;display:flex;gap:5px}
+.q-progress i{flex:1;height:4px;border-radius:2px;background:var(--grid)}
+.q-progress i.on{background:var(--series-1)}
+.q-step h2{font-size:clamp(22px,3vw,28px);letter-spacing:-0.02em;margin:6px 0 6px;line-height:1.2}
+.q-step p{margin:0 0 14px}
+.q-cards{display:grid;gap:10px}
+.q-card{display:grid;grid-template-columns:auto 1fr;column-gap:12px;align-items:center;border:1px solid var(--border);border-radius:12px;padding:14px 16px;cursor:pointer;background:var(--page)}
+.q-card input{grid-row:span 2}
+.q-card span{color:var(--text-secondary);font-size:13px}
+.q-card:has(input:checked){border-color:var(--series-1);box-shadow:0 0 0 1px var(--series-1)}
+.q-picks{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.pick{position:relative}
+.pick input{position:absolute;opacity:0;pointer-events:none}
+.pick span{display:inline-block;border:1px solid var(--border);border-radius:999px;padding:8px 14px;cursor:pointer;background:var(--page);font-weight:520}
+.pick input:checked + span{background:var(--series-1);border-color:var(--series-1);color:#fff}
+.pick input:focus-visible + span{outline:2px solid var(--series-1);outline-offset:2px}
+#q-other,.q-select{width:100%;background:var(--surface-1);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:15px}
+.q-row{display:grid;gap:8px}
+.q-row label{font-size:13px;color:var(--text-secondary);margin-top:6px}
+.q-hint{color:var(--serious);min-height:1em}
+.quiz-nav{display:flex;justify-content:flex-end;gap:10px}
+
 /* Agent */
 .ai-badge{font-size:10px;font-weight:700;letter-spacing:.05em;color:#fff;background:var(--series-1);border-radius:4px;padding:1px 4px;margin-left:3px;vertical-align:1px}
 .agent-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:14px;align-items:start}
@@ -201,7 +242,8 @@ rect.today{stroke:var(--series-2);stroke-width:2}
   nav.tabs button{padding:6px 10px;font-size:13px;white-space:nowrap}
   .spacer{display:none}
   main{padding:12px}
-  .charts,.heat,.agent-grid{grid-template-columns:1fr}
+  .charts,.heat,.agent-grid,.portal-grid{grid-template-columns:1fr}
+  .quiz{padding:16px}
   .hero-main{padding:22px 2px 16px}
   .pitch-btn{display:none}
   .tiles{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}

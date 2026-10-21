@@ -1,6 +1,9 @@
-import { hbar, vbar, line, card, fmt, usd, stateMap, calendarHeat } from "./charts.js?v=3";
-import { localISODate, addDaysISO, daysBetween, isSetAside, countOpen, liveRenewals, recentMonths, coverageSkewed, emailText } from "./lib.js?v=1";
-import { initAgent } from "./agent.js?v=2";
+import { hbar, vbar, line, card, fmt, usd, stateMap, tileMap, calendarHeat } from "./charts.js?v=4";
+import { localISODate, addDaysISO, daysBetween, isSetAside, countOpen, liveRenewals, recentMonths, coverageSkewed, emailText } from "./lib.js?v=3";
+import { initAgent } from "./agent.js?v=4";
+import { initPortal } from "./portal.js?v=2";
+import { initGrants } from "./grants.js?v=1";
+import { FL_COUNTIES, countyOf } from "./florida.js?v=1";
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -51,6 +54,8 @@ document.querySelectorAll("[role=tab]").forEach((b) => b.onclick = () => {
   document.querySelectorAll("[role=tab]").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
   document.querySelectorAll(".panel").forEach((p) => p.classList.toggle("active", p.id === "panel-" + b.dataset.tab));
   if (b.dataset.tab === "dashboard") renderDashboard();
+  if (b.dataset.tab === "foryou") grantsUI.load().then(() => portal.render());
+  if (b.dataset.tab === "grants") grantsUI.init();
   if (b.dataset.tab === "search") runSearch(1);
   if (b.dataset.tab === "renewals") initRenewals();
   if (b.dataset.tab === "plan") initPlan();
@@ -196,14 +201,23 @@ function renderDashboard() {
     if (daysLeft(r[F.DUE]) <= 7) soonByState[r[F.STATE]] = (soonByState[r[F.STATE]] || 0) + 1;
   }
   const notes = Object.fromEntries(Object.entries(soonByState).map(([k, v]) => [k, `${v} closing this week`]));
-  add("Where the work is", st ? `${stateName(st)} outlined. Click another state to switch, or the same one to clear.` : "Open notices by place of performance. Click a state to focus the dashboard on it.", (el) =>
-    stateMap(el, byState, { selected: st, names: STATE_NAME, notes, onClick: (code) => { $("#d-state").value = code === st ? "" : code; renderDashboard(); } }), heat);
+  // Florida first: the county map uses every Florida row under the current filters,
+  // whatever the state filter says.
+  const flRows = (st ? mapRows : rows).filter((r) => r[F.STATE] === "FL");
+  const byCounty = {};
+  for (const r of flRows) { const c = countyOf(r[F.CITY], source(r)); if (c) byCounty[c] = (byCounty[c] || 0) + 1; }
+  const miami = byCounty["Miami-Dade"] || 0;
+  add("Florida, county by county", `${flRows.length.toLocaleString()} open in Florida, ${miami} in Miami-Dade (outlined). Military bases put the Panhandle and Space Coast on the map.`, (el) =>
+    tileMap(el, byCounty, FL_COUNTIES, { selected: "Miami-Dade", names: Object.fromEntries(Object.keys(FL_COUNTIES).map((k) => [k, `${k} County`])), maxTile: 40, ariaLabel: "Open notices by Florida county" }), heat);
   const byDay = {};
   for (const r of rows) byDay[r[F.DUE]] = (byDay[r[F.DUE]] || 0) + 1;
   const days = Number($("#d-days").value) || 90;
   const busiest = Object.entries(byDay).sort((a, b) => b[1] - a[1])[0];
   add("Deadline calendar", busiest ? `Darker days have more bids due. Busiest: ${new Date(busiest[0] + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}, with ${busiest[1]} due.` : "No deadlines in this window.", (el) =>
     calendarHeat(el, byDay, { start: localISODate(), today: localISODate(), weeks: Math.min(13, Math.ceil(days / 7) + 1) }), heat);
+
+  add("Where the work is nationally", st ? `${stateName(st)} outlined. Click another state to switch, or the same one to clear.` : "Open notices by place of performance. Click a state to focus the dashboard on it.", (el) =>
+    stateMap(el, byState, { selected: st, names: STATE_NAME, notes, onClick: (code) => { $("#d-state").value = code === st ? "" : code; renderDashboard(); } }));
 
   const weeks = new Map();
   for (const r of rows) {
@@ -630,6 +644,8 @@ addEventListener("keydown", (e) => {
   }
 });
 
+// Florida is home: the dashboard opens on it. "All states" is one click away.
+$("#d-state").value = "FL";
 renderDashboard();
 
 updateSavedCount();
@@ -639,12 +655,25 @@ updateSavedCount();
   if (m && ROWS.some((r) => r[F.ID] === decodeURIComponent(m[1]))) openDetail(decodeURIComponent(m[1]));
 }
 
-initAgent({
-  F, R, rows: ROWS, hay: HAY, vendors: () => VENDORS, loadRenewals, builtOn,
-  dept, type, setaside, agencyName, naicsName, stateName, money, daysLeft, localISODate, addDaysISO,
-  save: (id) => { if (!saved.has(id)) toggleSaved(id); },
-  openDetail, copyAndTick,
+const grantsUI = initGrants({ daysLeft, money, localISODate });
+const portal = initPortal({
+  F, rows: ROWS, hay: HAY, store, localISODate, daysLeft, setaside, source,
+  oppCard, openDetail, openVendors, grants: () => grantsUI.all(), grantCard: (g) => grantsUI.grantCard(g),
+  onProfile: (p) => agent.setProfile(p),
 });
+const agent = initAgent({
+  F, R, rows: ROWS, hay: HAY, vendors: () => VENDORS, loadRenewals, builtOn, grants: () => grantsUI.load(),
+  dept, type, setaside, source, agencyName, naicsName, stateName, money, daysLeft, localISODate, addDaysISO, countyOf,
+  save: (id) => { if (!saved.has(id)) toggleSaved(id); },
+  openDetail, copyAndTick, profile: () => portal.profile(),
+});
+$("#portal-more-grants").onclick = () => {
+  grantsUI.setWho(portal.profile()?.kind === "nonprofit" ? "nonprofit" : "small_business");
+  document.querySelector("[data-tab=grants]").click();
+};
+// Returning visitors land on their portal; first-time visitors get the welcome quiz.
+if (!location.hash && portal.profile()) document.querySelector("[data-tab=foryou]").click();
+portal.maybeGreet();
 $("#cta-agent").onclick = () => document.querySelector("[data-tab=agent]").click();
 // A link ending in #agent (the pitch deck's demo slide) opens straight on the agent.
 if (location.hash === "#agent") document.querySelector("[data-tab=agent]").click();

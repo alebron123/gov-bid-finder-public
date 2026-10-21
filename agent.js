@@ -4,6 +4,8 @@
 // work, saves picks to the shortlist, and proposes buyer emails. Anything that
 // leaves the page (a Gmail draft) waits for the person to press a button.
 
+import { profileToText, filterGrants, stemMatcher } from "./lib.js?v=3";
+
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
@@ -48,6 +50,7 @@ export function initAgent(ctx) {
     id: r[F.ID], title: r[F.TITLE].slice(0, 140), agency: ctx.agencyName(ctx.dept(r)), type: ctx.type(r),
     due: r[F.DUE], days_left: ctx.daysLeft(r[F.DUE]),
     place: [r[F.CITY], r[F.STATE]].filter(Boolean).join(", ") || "not listed",
+    county: r[F.STATE] === "FL" ? (ctx.countyOf(r[F.CITY], ctx.source(r)) || "unknown") : undefined,
     industry: ctx.naicsName(r[F.NAICS]) || r[F.NAICS] || "not listed",
     typical_award: r[F.VALUE] ? ctx.money(r[F.VALUE]) : "unknown",
     simplicity: r[F.SIMP], set_aside: ctx.setaside(r) || "open to all",
@@ -62,29 +65,33 @@ export function initAgent(ctx) {
       inputSchema: { type: "object", properties: {
         keywords: { type: "array", items: { type: "string" }, description: "1-5 lowercase word stems" },
         state: { type: "string", description: "Two-letter state code for the place of performance, e.g. FL. Omit for nationwide." },
+        county: { type: "string", description: "A Florida county, e.g. Miami-Dade or Broward. Implies state FL. Includes Miami-Dade County's own bids." },
         set_aside_only: { type: "boolean", description: "Only contracts reserved for small or certified businesses" },
         min_days_left: { type: "number", description: "Skip contracts due sooner than this many days (default 3)" },
       }, required: ["keywords"] },
       execute(input) {
         const kws = (Array.isArray(input.keywords) ? input.keywords : [input.keywords]).map((k) => String(k).toLowerCase().trim()).filter(Boolean).slice(0, 5);
         if (!kws.length) throw new Error("Give at least one keyword.");
-        const state = input.state ? String(input.state).toUpperCase().slice(0, 2) : "";
+        const county = input.county ? String(input.county).replace(/\s*county$/i, "").trim() : "";
+        const state = county ? "FL" : input.state ? String(input.state).toUpperCase().slice(0, 2) : "";
         const minDays = Number.isFinite(Number(input.min_days_left)) ? Number(input.min_days_left) : 3;
         const today = ctx.localISODate();
+        const fits = stemMatcher(kws);
         const hits = [];
         for (let i = 0; i < ctx.rows.length; i++) {
           const r = ctx.rows[i];
           if (r[F.DUE] < today || !r[F.US]) continue;
           if (state && r[F.STATE] !== state) continue;
+          if (county && ctx.countyOf(r[F.CITY], ctx.source(r)).toLowerCase() !== county.toLowerCase()) continue;
           if (input.set_aside_only && !ctx.setaside(r)) continue;
           if (ctx.daysLeft(r[F.DUE]) < minDays) continue;
-          if (!kws.some((k) => ctx.hay[i].includes(k))) continue;
+          if (!fits(ctx.hay[i])) continue;
           hits.push(r);
         }
         hits.sort((a, b) => (b[F.SCORE] || 0) - (a[F.SCORE] || 0) || a[F.DUE].localeCompare(b[F.DUE]));
         const seen = new Set(), top = [];
         for (const r of hits) { if (seen.has(r[F.TITLE])) continue; seen.add(r[F.TITLE]); top.push(compact(r)); if (top.length >= MAX_RESULTS) break; }
-        step("⌕", `Searched <b>${esc(kws.join(", "))}</b> ${state ? "in " + esc(ctx.stateName(state)) : "nationwide"}: <b>${hits.length}</b> open`);
+        step("⌕", `Searched <b>${esc(kws.join(", "))}</b> ${county ? "in " + esc(county) + " County" : state ? "in " + esc(ctx.stateName(state)) : "nationwide"}: <b>${hits.length}</b> open`);
         return { total_matches: hits.length, results: top };
       },
     },
@@ -130,6 +137,24 @@ export function initAgent(ctx) {
         hits.sort((a, b) => a[R.END].localeCompare(b[R.END]));
         step("↻", `Looked for expiring contracts: <b>${hits.length}</b> ending within a year`);
         return hits.slice(0, MAX_RESULTS).map((r) => ({ trade: r[R.TRADE], ends: r[R.END], value: ctx.money(r[R.AMT]), held_by: r[R.WHO] || "unknown", agency: r[R.AGENCY], state: r[R.STATE], description: String(r[R.DESC]).slice(0, 120) }));
+      },
+    },
+    {
+      name: "search_grants",
+      description: "Search open federal grants (from Grants.gov) that small businesses, nonprofits or individuals may apply for. Research grants for labs are excluded. Returns title, agency, close date, award ceiling and link.",
+      inputSchema: { type: "object", properties: {
+        keywords: { type: "array", items: { type: "string" }, description: "1-4 words about their work or mission, e.g. 'food', 'youth', 'workforce'" },
+        who: { type: "string", enum: ["small_business", "nonprofit", "individual"], description: "Who is applying" },
+      }, required: ["keywords"] },
+      async execute(input) {
+        const all = await ctx.grants();
+        const kws = (Array.isArray(input.keywords) ? input.keywords : [input.keywords]).map((k) => String(k).toLowerCase()).filter(Boolean).slice(0, 4);
+        const who = ["small_business", "nonprofit", "individual"].includes(input.who) ? input.who : "";
+        const pool = filterGrants(all, { who, today: ctx.localISODate() });
+        const fits = stemMatcher(kws);
+        const hits = pool.filter((g) => fits(`${g.title} ${g.desc} ${g.categories.join(" ")}`.toLowerCase()));
+        step("$", `Searched grants for <b>${esc(kws.join(", "))}</b>: <b>${hits.length}</b> open`);
+        return { total_matches: hits.length, results: hits.slice(0, 6).map((g) => ({ title: g.title.slice(0, 140), agency: g.agency, closes: g.closes || "not set (forecast)", award_ceiling: g.ceiling ? ctx.money(g.ceiling) : "not stated", link: g.link })) };
       },
     },
     {
@@ -212,7 +237,7 @@ export function initAgent(ctx) {
   }
 
   // ---- run ----
-  const INSTRUCTIONS = (profile) => `You are govbid's contracting agent. You work for a small business and find US government contracts it can realistically win, then take the first step toward winning one.
+  const INSTRUCTIONS = (profile) => `You are govbid's contracting agent, built for Miami and South Florida. You work for a small business or community group and find government contracts and grants it can realistically win, then take the first step toward winning one.
 
 Today is ${ctx.localISODate()}. Contract data is from ${ctx.builtOn}.
 
@@ -222,7 +247,7 @@ ${profile.slice(0, 2000)}
 """
 
 How to work:
-1. Pick 2-4 word stems for their trade and call search_contracts, in their state first. If that finds fewer than 3, search again nationwide or with broader stems. Make independent tool calls in the same round.
+1. Pick 2-4 word stems for their trade. If they are in Florida, call search_contracts with their county first (this includes Miami-Dade County's own bids), then state FL, then nationwide only if Florida has fewer than 3 good fits. Make independent tool calls in the same round, and call search_grants in that first round too.
 2. Call get_contract on the 3 most promising results in one round. Match the kind of work, not just the word: a building painter is not an aircraft or ship coatings shop, and a landscaper is not a land survey firm. Skip results that need different equipment, licenses or facilities. Prefer: work in or near their state (say so when a pick needs travel), buyer_named true, simplicity 55 or more, 7+ days left, a typical award the business can handle, and a set-aside they qualify for. A set-aside for a certification they did not mention (8(a), HUBZone, SDVOSB, WOSB) rules a contract out. If nothing truly fits, say so plainly and lean on expiring contracts instead.
 3. For your top pick, call find_competitors. Call find_expiring_contracts once with their trade and state.
 4. Call save_to_shortlist for each pick, and propose_email once for the top pick: a short, plain email to the buyer that introduces the business in one line and asks what decides whether to bid (is the full package posted, is there a site visit, bonding or insurance requirements, is there an incumbent). No flattery, under 150 words.
@@ -231,6 +256,7 @@ Then answer in under 220 words, plain text with **bold** and "- " bullets only:
 - One line on what you searched and how many open contracts matched.
 - Your picks: **title**, deadline, typical award, and one line on why it fits.
 - One expiring contract worth preparing for, if any.
+- Up to two grants they could apply for, if any fit.
 - Say the email is waiting for their approval below.
 Only mention contracts that came back from the tools. Never invent ids, numbers or emails.`;
 
@@ -264,6 +290,8 @@ Only mention contracts that came back from the tools. Never invent ids, numbers 
       runBtn.disabled = false; stopBtn.hidden = true;
     }
   }
+  const setProfile = (p) => { if (p) box.value = profileToText(p); };
+  setProfile(ctx.profile?.());
   runBtn.onclick = run;
   stopBtn.onclick = () => ctl?.abort();
 
@@ -280,4 +308,5 @@ Only mention contracts that came back from the tools. Never invent ids, numbers 
       $("#agent-unavailable").hidden = false;
     }
   })();
+  return { setProfile };
 }

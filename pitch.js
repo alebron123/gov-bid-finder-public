@@ -1,5 +1,6 @@
-import { stateMap, fmt, usd } from "./charts.js?v=3";
-import { localISODate, addDaysISO, countOpen, liveRenewals } from "./lib.js?v=1";
+import { tileMap, fmt, usd } from "./charts.js?v=4";
+import { FL_COUNTIES, countyOf } from "./florida.js?v=1";
+import { localISODate, addDaysISO, countOpen, liveRenewals } from "./lib.js?v=3";
 
 // ---- slide navigation ----
 const slides = [...document.querySelectorAll(".slide")];
@@ -30,19 +31,21 @@ const DUE = 5, STATE = 7, VALUE = 19;
 const STATE_NAME = { AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California", CO: "Colorado", CT: "Connecticut", DE: "Delaware", FL: "Florida", GA: "Georgia", HI: "Hawaii", ID: "Idaho", IL: "Illinois", IN: "Indiana", IA: "Iowa", KS: "Kansas", KY: "Kentucky", LA: "Louisiana", ME: "Maine", MD: "Maryland", MA: "Massachusetts", MI: "Michigan", MN: "Minnesota", MS: "Mississippi", MO: "Missouri", MT: "Montana", NE: "Nebraska", NV: "Nevada", NH: "New Hampshire", NJ: "New Jersey", NM: "New Mexico", NY: "New York", NC: "North Carolina", ND: "North Dakota", OH: "Ohio", OK: "Oklahoma", OR: "Oregon", PA: "Pennsylvania", RI: "Rhode Island", SC: "South Carolina", SD: "South Dakota", TN: "Tennessee", TX: "Texas", UT: "Utah", VT: "Vermont", VA: "Virginia", WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming", DC: "Washington, D.C.", PR: "Puerto Rico" };
 const setStat = (k, v) => document.querySelectorAll(`[data-stat="${k}"]`).forEach((n) => { n.textContent = v; });
 
-let byState = null;
+let byCounty = null;
 function drawMap() {
   const host = document.getElementById("deck-map");
-  if (!byState) { host.innerHTML = '<div class="empty small">Loading…</div>'; return; }
-  stateMap(host, byState, { selected: "FL", names: STATE_NAME });
+  if (!byCounty) { host.innerHTML = '<div class="empty small">Loading…</div>'; return; }
+  tileMap(host, byCounty, FL_COUNTIES, { selected: "Miami-Dade", names: Object.fromEntries(Object.keys(FL_COUNTIES).map((k) => [k, `${k} County`])), maxTile: 46, ariaLabel: "Open contracts by Florida county" });
 }
 
 const today = localISODate();
-const [data, renewals, vendors] = await Promise.all([
+const [data, renewals, vendors, grantsFile] = await Promise.all([
   fetch("./data.json").then((r) => r.json()),
   fetch("./renewals.json").then((r) => r.json()).catch(() => []),
   fetch("./vendors.json").then((r) => r.json()).catch(() => ({})),
+  fetch("./grants.json").then((r) => r.json()).catch(() => ({ grants: [] })),
 ]);
+const SRC = data.meta.dicts.sources, CITY = 8;
 const open = data.rows.filter((r) => r[DUE] >= today);
 setStat("open", countOpen(data.rows, DUE, today).toLocaleString());
 const values = open.map((r) => r[VALUE]).filter(Boolean).sort((a, b) => a - b);
@@ -60,6 +63,9 @@ for (const list of Object.values(vendors)) for (const v of list) companies.add(v
 setStat("companies", fmt(companies.size));
 setStat("awards", fmt(data.meta.awards_by_month.reduce((a, m) => a + m.value, 0)));
 
-byState = {};
-for (const r of open) if (STATE_NAME[r[STATE]]) byState[r[STATE]] = (byState[r[STATE]] || 0) + 1;
+byCounty = {};
+for (const r of open) if (r[STATE] === "FL") { const c = countyOf(r[CITY], SRC[r[10]]); if (c) byCounty[c] = (byCounty[c] || 0) + 1; }
+setStat("miami", (byCounty["Miami-Dade"] || 0).toLocaleString());
+setStat("mdcBids", open.filter((r) => SRC[r[10]] === "miami-dade").length.toLocaleString());
+setStat("grants", grantsFile.grants.filter((g) => !g.closes || g.closes >= today).length.toLocaleString());
 if (slides[at].querySelector("#deck-map")) drawMap();
