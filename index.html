@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Gov Bid Finder</title>
 <meta name="description" content="Search every open US federal and Florida state contract opportunity in one place.">
-<link rel="stylesheet" href="./styles.css?v=1792601000">
+<link rel="stylesheet" href="./styles.css?v=1792602000">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='11' fill='%232a78d6'/></svg>">
 </head>
 <body>
@@ -13,6 +13,7 @@
   <div class="brand"><span class="dot"></span> Gov Bid Finder</div>
   <nav class="tabs" role="tablist">
     <button role="tab" data-tab="dashboard" aria-selected="true">Dashboard</button>
+    <button role="tab" data-tab="agent" aria-selected="false" class="tab-agent">Agent <span class="ai-badge">AI</span></button>
     <button role="tab" data-tab="search" aria-selected="false">Search</button>
     <button role="tab" data-tab="renewals" aria-selected="false">Renewals</button>
     <button role="tab" data-tab="saved" aria-selected="false">Shortlist</button>
@@ -47,7 +48,8 @@
         <button data-q="repair">Repairs</button>
       </div>
       <div class="hero-cta">
-        <button class="btn lg" id="cta-florida">Show me Florida</button>
+        <button class="btn lg" id="cta-agent">Ask the agent to find work for you</button>
+        <button class="btn ghost lg" id="cta-florida">Show me Florida</button>
         <a class="btn ghost lg" href="./pitch.html">See the pitch &rarr;</a>
       </div>
     </div>
@@ -60,6 +62,42 @@
     <div class="grid tiles" id="tiles"></div>
     <div class="grid heat" id="heat"></div>
     <div class="grid charts" id="charts"></div>
+  </section>
+
+  <section class="panel" id="panel-agent">
+    <div class="hero" style="padding:22px 4px 14px">
+      <p class="eyebrow"><span class="live-dot"></span> An AI agent that works for one small business</p>
+      <h1 style="font-size:clamp(26px,3.6vw,40px);margin:12px 0 8px">Tell it about your business. It finds the contract and makes the first move.</h1>
+      <p class="lede">It searches every open contract, reads the promising ones, checks who you're up against and what's about to expire, saves its picks to your shortlist, and drafts the email to the buyer. Nothing goes out until you approve it.</p>
+    </div>
+    <div class="agent-grid">
+      <div class="card agent-ask">
+        <label for="agent-input" class="small muted">Your business, in plain words</label>
+        <textarea id="agent-input">We're a 6-person commercial painting company in Miami, FL. Registered small business, no special certifications. Jobs up to about $250k. Find us something we can win.</textarea>
+        <div class="agent-examples" id="agent-examples">
+          <span class="small muted">Try:</span>
+          <button type="button" data-text="HVAC repair and maintenance shop in Hialeah, FL. 12 employees, small business, can handle jobs up to $500k.">HVAC in Hialeah</button>
+          <button type="button" data-text="Janitorial and custodial crew based in Fort Lauderdale, FL. Women-owned small business (WOSB certified). 20 cleaners. Contracts up to $300k a year.">Janitorial, WOSB</button>
+          <button type="button" data-text="Licensed security guard company in Orlando, FL. Service-disabled veteran-owned (SDVOSB). 40 guards.">Security guards, SDVOSB</button>
+          <button type="button" data-text="Landscaping and grounds maintenance company in Homestead, FL. 8 people, trucks and mowers. Small business. Up to $150k.">Landscaping in Homestead</button>
+        </div>
+        <div class="agent-run-row">
+          <button type="button" class="btn lg" id="agent-run">Run the agent</button>
+          <button type="button" class="btn ghost" id="agent-stop" hidden>Stop</button>
+          <label class="small muted agent-deep"><input type="checkbox" id="agent-deep"> Think harder (slower)</label>
+        </div>
+        <div class="small agent-status" id="agent-status" aria-live="polite"></div>
+        <div class="callout small" id="agent-unavailable" hidden>The agent runs on Claude, so it works when this page is opened through its Claude link. Everything else on the site works anywhere.</div>
+      </div>
+      <div class="agent-work" id="agent-work" hidden>
+        <div class="card">
+          <p class="chart-title">What the agent is doing</p>
+          <ol class="agent-log" id="agent-log"></ol>
+        </div>
+        <div class="card agent-answer" id="agent-answer" aria-live="polite"></div>
+        <div id="agent-actions" class="agent-actions"></div>
+      </div>
+    </div>
   </section>
 
   <section class="panel" id="panel-search">
@@ -245,6 +283,6 @@
   <div class="dlg-body" id="dlg-body"></div>
 </dialog>
 <div class="tooltip" id="tip"></div>
-<script type="module" src="./app.js?v=1792601000"></script>
+<script type="module" src="./app.js?v=1792602000"></script>
 </body>
 </html>

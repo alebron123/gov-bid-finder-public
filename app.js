@@ -1,5 +1,6 @@
 import { hbar, vbar, line, card, fmt, usd, stateMap, calendarHeat } from "./charts.js?v=3";
 import { localISODate, addDaysISO, daysBetween, isSetAside, countOpen, liveRenewals, recentMonths, coverageSkewed, emailText } from "./lib.js?v=1";
+import { initAgent } from "./agent.js?v=1";
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -637,5 +638,15 @@ updateSavedCount();
   const m = location.hash.match(/^#c=(.+)$/);
   if (m && ROWS.some((r) => r[F.ID] === decodeURIComponent(m[1]))) openDetail(decodeURIComponent(m[1]));
 }
+
+initAgent({
+  F, R, rows: ROWS, hay: HAY, vendors: () => VENDORS, loadRenewals, builtOn,
+  dept, type, setaside, agencyName, naicsName, stateName, money, daysLeft, localISODate, addDaysISO,
+  save: (id) => { if (!saved.has(id)) toggleSaved(id); },
+  openDetail, copyAndTick,
+});
+$("#cta-agent").onclick = () => document.querySelector("[data-tab=agent]").click();
+// A link ending in #agent (the pitch deck's demo slide) opens straight on the agent.
+if (location.hash === "#agent") document.querySelector("[data-tab=agent]").click();
 
 $("#about-built").textContent = `Snapshot of ${META.total.toLocaleString()} open notices, built ${new Date(META.built_at).toLocaleString()}.`;

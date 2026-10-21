@@ -25,6 +25,9 @@
   }
 }
 *{box-sizing:border-box}
+/* WHY: component rules like .agent-work{display:flex} would otherwise beat the
+   hidden attribute, and toggling el.hidden would do nothing. */
+[hidden]{display:none !important}
 body{margin:0;background:var(--page);color:var(--text-primary);font-family:var(--font);font-size:14px;line-height:1.5}
 a{color:var(--series-1)}
 button,select,input,textarea{font:inherit;color:inherit}
@@ -138,6 +141,39 @@ rect.today{stroke:var(--series-2);stroke-width:2}
 .heat-legend span{margin:0 5px}
 .heat-legend i{width:16px;height:10px;border-radius:2px;display:block}
 
+/* Agent */
+.ai-badge{font-size:10px;font-weight:700;letter-spacing:.05em;color:#fff;background:var(--series-1);border-radius:4px;padding:1px 4px;margin-left:3px;vertical-align:1px}
+.agent-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:14px;align-items:start}
+.agent-ask{display:flex;flex-direction:column;gap:10px}
+.agent-ask textarea{min-height:130px;font-size:15px;line-height:1.5}
+.agent-examples{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.agent-examples button{background:var(--page);border:1px solid var(--border);border-radius:999px;padding:4px 11px;font-size:12.5px;cursor:pointer}
+.agent-examples button:hover{border-color:var(--series-1);color:var(--series-1)}
+.agent-run-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.agent-deep{display:flex;align-items:center;gap:6px}
+.agent-status:empty{display:none}
+.agent-status{color:var(--serious)}
+.agent-work{display:flex;flex-direction:column;gap:14px;min-width:0}
+.agent-log{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:7px;font-size:13.5px}
+.agent-log li{display:flex;gap:10px;align-items:baseline;animation:rise .25s ease}
+.agent-log .ico{flex:0 0 18px;text-align:center;color:var(--series-1);font-weight:700}
+@keyframes rise{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.agent-answer:empty{display:none}
+.agent-answer{font-size:14.5px;line-height:1.6}
+.agent-answer p{margin:0 0 8px} .agent-answer ul{margin:0 0 10px;padding-left:20px} .agent-answer li{margin-bottom:5px}
+.agent-answer h4{margin:10px 0 6px}
+.agent-actions{display:flex;flex-direction:column;gap:14px}
+.action-card{border:2px solid var(--series-1);display:flex;flex-direction:column;gap:6px}
+.action-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.action-card .badge{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--series-1)}
+.action-card h4{margin:2px 0 4px;font-size:14.5px}
+.action-card label{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.action-card input,.action-card textarea{width:100%;background:var(--page);border:1px solid var(--border);border-radius:6px;padding:8px;font-size:13.5px}
+.action-card textarea{min-height:170px}
+.action-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.action-note{color:var(--text-secondary)}
+@media (prefers-reduced-motion: reduce){ .agent-log li,.slide.active{animation:none} }
+
 /* Mid widths: keep the header on one line */
 @media (max-width: 1040px) and (min-width: 761px){
   header.top{gap:8px;padding:10px 14px}
@@ -153,7 +189,7 @@ rect.today{stroke:var(--series-2);stroke-width:2}
   nav.tabs button{padding:6px 10px;font-size:13px;white-space:nowrap}
   .spacer{display:none}
   main{padding:12px}
-  .charts,.heat{grid-template-columns:1fr}
+  .charts,.heat,.agent-grid{grid-template-columns:1fr}
   .hero-main{padding:22px 2px 16px}
   .pitch-btn{display:none}
   .tiles{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
