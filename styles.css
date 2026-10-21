@@ -180,9 +180,16 @@ rect.today{stroke:var(--series-2);stroke-width:2}
   nav.tabs button{padding:7px 8px}
   .pill{font-size:11.5px;padding:3px 8px}
 }
-/* WHY: with the Agent tab and a shortlist count, the header no longer fits one
-   line below ~940px; the data date is also on the dashboard tiles and About tab. */
-@media (max-width: 940px) and (min-width: 761px){
+/* WHY: with the Agent tab and a shortlist count the header outgrew one line, and the
+   viewer can scale the page, so a width breakpoint alone is unreliable. On desktop the
+   header never wraps: the tab row shrinks and scrolls sideways instead. */
+@media (min-width: 761px){
+  header.top{flex-wrap:nowrap}
+  nav.tabs{min-width:0;overflow-x:auto;scrollbar-width:none}
+  nav.tabs button{white-space:nowrap}
+  #pill-data{min-width:0;overflow:hidden;text-overflow:ellipsis}
+}
+@media (max-width: 1100px) and (min-width: 761px){
   #pill-data{display:none}
 }
 
