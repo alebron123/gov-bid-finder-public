@@ -1,4 +1,4 @@
-import { floridaMap, fmt, usd } from "./charts.js?v=5";
+import { floridaMap, fmt, usd } from "./charts.js?v=6";
 import { countyOf } from "./florida.js?v=1";
 import { localISODate, addDaysISO, countOpen, liveRenewals } from "./lib.js?v=3";
 

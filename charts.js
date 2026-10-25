@@ -133,6 +133,9 @@ export function shapeMap(host, counts, shapes, view, { selected = "", names = {}
   host.innerHTML = "";
   const [W, H] = view;
   const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": ariaLabel, class: "shape-map" }, host);
+  // WHY scale type with the view: the US map is drawn 60% wider than Florida, so fixed
+  // sizes would shrink its labels to unreadable when both render at the same width.
+  svg.style.setProperty("--map-type", `${W / 35}px`);
   for (const [x, y, text, anchor = "middle"] of water) el("text", { x, y, "text-anchor": anchor, class: "map-water" }, svg).textContent = text;
   const bin = quantileBins(Object.keys(shapes).map((k) => counts[k] || 0));
   const land = el("g", {}, svg);
@@ -163,7 +166,7 @@ export function shapeMap(host, counts, shapes, view, { selected = "", names = {}
 
 const countyNames = Object.fromEntries(Object.keys(FL_SHAPES).map((k) => [k, `${k} County`]));
 // Water labels in Florida map coordinates, placed in open sea beside the coast.
-const FL_WATER = [[150, 300, "Gulf of Mexico"], [585, 150, "Atlantic Ocean", "end"], [150, 520, "Florida Keys", "middle"]];
+const FL_WATER = [[150, 300, "Gulf of Mexico"], [592, 250, "Atlantic Ocean", "end"], [330, 548, "Florida Keys"]];
 export const floridaMap = (host, counts, opts = {}) =>
   shapeMap(host, counts, FL_SHAPES, FL_VIEW, { names: countyNames, coast: FL_COAST, water: FL_WATER, ariaLabel: "Florida counties", ...opts });
 export const stateMap = (host, counts, opts = {}) =>
