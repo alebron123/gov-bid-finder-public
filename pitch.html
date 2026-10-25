@@ -63,6 +63,18 @@
   <p class="big muted">Claude decides which tools to call and in what order. The page shows every step it takes, and nothing leaves without a person's click.</p>
 </section>
 
+<section class="slide" data-title="Tech">
+  <p class="kicker">How it's built</p>
+  <h2>Claude does the reasoning. Public data does the rest.</h2>
+  <ol class="flow">
+    <li><b>Live public data</b><span>Every open federal notice from the SAM.gov daily extract, Miami-Dade County's own bid feeds, Florida state solicitations, Grants.gov, and USAspending award history.</span></li>
+    <li><b>An agent with 7 tools</b><span>Claude decides which to call: search contracts, read one, find competitors, find expiring work, search grants, save to the shortlist, propose an email.</span></li>
+    <li><b>Action, with approval</b><span>The buyer email lands in the owner's Gmail as a draft through Claude's Gmail connector, only after they click.</span></li>
+    <li><b>Text it</b><span>Owners can text their personal AI agent. It writes the question to a shared Google Doc, and govbid answers there within five minutes.</span></li>
+  </ol>
+  <p class="big muted">Plain JavaScript, no framework. 33 automated tests. Map outlines drawn from US Census boundaries.</p>
+</section>
+
 <section class="slide" data-title="Demo">
   <p class="kicker">Live demo</p>
   <h2>A Miami contractor asks the agent for work.</h2>
@@ -110,6 +122,6 @@
   <a class="icon-btn" href="./">Back to app</a>
 </nav>
 <div class="tooltip" id="tip"></div>
-<script type="module" src="./pitch.js?v=6"></script>
+<script type="module" src="./pitch.js?v=7"></script>
 </body>
 </html>
