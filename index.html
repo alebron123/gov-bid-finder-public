@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400..700&family=Hanken+Grotesk:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="./styles.css?v=1792944000">
+<link rel="stylesheet" href="./styles.css?v=1792944001">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='11' fill='%236fa8ff'/></svg>">
 </head>
 <body>
@@ -42,6 +42,7 @@
         <div>
           <p class="eyebrow"><span class="live-dot"></span> Your portal</p>
           <h1 id="portal-who">Your business</h1>
+          <p class="lede" id="portal-lede"></p>
         </div>
         <div class="portal-head-acts">
           <button type="button" class="btn lg" id="portal-agent">Have the agent work on this</button>
@@ -53,6 +54,12 @@
         <div class="card">
           <p class="chart-title">Florida, county by county</p>
           <p class="chart-sub" id="portal-map-sub"></p>
+          <div class="filters map-filters">
+            <label class="sr-only" for="pm-trade">Job type</label>
+            <select id="pm-trade"><option value="all">All jobs</option><option value="mine">My trades</option></select>
+            <label class="sr-only" for="pm-county">County</label>
+            <select id="pm-county"><option value="">All of Florida</option></select>
+          </div>
           <div class="plot" id="portal-map"></div>
         </div>
         <div class="portal-side">
@@ -165,6 +172,16 @@
     <div class="hero" style="padding:22px 4px 14px">
       <h1 style="font-size:clamp(24px,3.2vw,36px)">Grants you can apply for</h1>
       <p class="lede">Federal grants open to small businesses, nonprofits and individuals, refreshed daily from Grants.gov. Research grants for labs are hidden unless you ask for them.</p>
+      <details class="callout small how-ranked">
+        <summary><strong>How grants are ordered</strong></summary>
+        <ul>
+          <li><strong>No secret score.</strong> govbid doesn't rate grants or guess your odds. Every grant here is one Grants.gov lists as open, or forecast to open, to the applicant type you pick.</li>
+          <li><strong>Closing soonest</strong> (the default) puts the nearest deadline first, so nothing slips past you. Forecast grants with no deadline yet go last.</li>
+          <li><strong>Largest award</strong> sorts by the most a single grant can pay (its award ceiling). Grants that don't state a ceiling go last.</li>
+          <li><strong>Hidden by default:</strong> lab research grants (NIH codes like R01, plus SBIR/STTR and clinical trials). They make up most federal grants open to small businesses but rarely fit a Miami shop or nonprofit. Untick the box to see them.</li>
+          <li><strong>"Grants for you"</strong> on your portal are the ones whose title or description uses words from your trades, such as "food" or "construction". It's a word match, not a recommendation: read the eligibility on Grants.gov before you apply.</li>
+        </ul>
+      </details>
     </div>
     <div class="filters">
       <input type="search" id="g-q" placeholder="Search: food, housing, youth, workforce, environment…">
@@ -388,6 +405,6 @@
   </div>
 </dialog>
 <div class="tooltip" id="tip"></div>
-<script type="module" src="./app.js?v=1792944001"></script>
+<script type="module" src="./app.js?v=1792944002"></script>
 </body>
 </html>

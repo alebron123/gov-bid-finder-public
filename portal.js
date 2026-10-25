@@ -25,7 +25,6 @@ export const COUNTY_NAMES = Object.keys(FL_COUNTIES).sort((a, b) => a === "Miami
 export function initPortal(ctx) {
   const { F } = ctx;
   let profile = ctx.store.get("profile") ? (() => { try { return JSON.parse(ctx.store.get("profile")); } catch { return null; } })() : null;
-  let countyFilter = "";
 
   // ---- quiz ----
   const quiz = $("#quiz");
@@ -35,6 +34,10 @@ export function initPortal(ctx) {
   tradeBox.innerHTML = TRADES.map((t) => `<label class="pick"><input type="checkbox" value="${t.id}"><span>${esc(t.label)}</span></label>`).join("");
   certBox.innerHTML = CERTS.map((c) => `<label class="pick"><input type="checkbox" value="${c.id}"><span>${esc(c.label)}</span></label>`).join("");
   countySel.innerHTML = COUNTY_NAMES.map((c) => `<option value="${esc(c)}">${esc(c)} County</option>`).join("") + '<option value="outside">Outside Florida</option>';
+  $("#pm-trade").insertAdjacentHTML("beforeend", TRADES.map((t) => `<option value="${t.id}">${esc(t.label)}</option>`).join(""));
+  $("#pm-county").insertAdjacentHTML("beforeend", COUNTY_NAMES.map((c) => `<option value="${esc(c)}">${esc(c)} County</option>`).join(""));
+  // The county filter lives in the select; clicking a county on the map sets it too.
+  ["#pm-trade", "#pm-county"].forEach((id) => $(id).onchange = () => render());
 
   function showStep(i) {
     at = Math.max(0, Math.min(steps.length - 1, i));
@@ -93,6 +96,21 @@ export function initPortal(ctx) {
     }
     return out;
   }
+  // WHY start from every job: the map should show how much work Florida has, then
+  // let the owner narrow it, rather than opening on a near-empty trade.
+  function floridaPool(trade, p) {
+    const stems = trade === "all" ? [] : trade === "mine" ? profileStems(p) : (TRADES.find((t) => t.id === trade)?.stems || []);
+    const fits = stemMatcher(stems);
+    const today = ctx.localISODate();
+    const out = [];
+    for (let i = 0; i < ctx.rows.length; i++) {
+      const r = ctx.rows[i];
+      if (r[F.STATE] !== "FL" || r[F.DUE] < today || !r[F.US]) continue;
+      if (stems.length && !fits(ctx.hay[i])) continue;
+      out.push(r);
+    }
+    return out;
+  }
   const rank = (p) => (r) => {
     const c = r[F.STATE] === "FL" ? countyOf(r[F.CITY], ctx.source(r)) : "";
     const local = c && c === p.county ? 3 : SOUTH_FLORIDA.includes(c) && SOUTH_FLORIDA.includes(p.county) ? 2 : r[F.STATE] === "FL" ? 1 : 0;
@@ -113,34 +131,40 @@ export function initPortal(ctx) {
     const grantFits = stemMatcher(profileStems(p));
     const myGrants = profileStems(p).length ? grants.filter((g) => grantFits(`${g.title} ${g.desc}`.toLowerCase())) : [];
 
-    $("#portal-who").textContent = `${p.kind === "nonprofit" ? "A nonprofit" : "A business"} in ${p.county === "outside" ? "the US" : p.county + " County"}${tradeLabel(p) ? ` · ${tradeLabel(p)}` : ""}`;
+    const trade = $("#pm-trade").value, county = $("#pm-county").value;
+    const tradeName = trade === "all" ? "all jobs" : trade === "mine" ? (tradeLabel(p) || "your trades") : TRADES.find((t) => t.id === trade)?.label || trade;
+    const pool = floridaPool(trade, p);
+    const home = p.county !== "outside" ? p.county : "";
+    const inHome = home ? pool.filter((r) => countyOf(r[F.CITY], ctx.source(r)) === home).length : 0;
+    $("#portal-who").innerHTML = `${pool.length.toLocaleString()} open contracts in Florida for <span class="accent">${esc(tradeName.toLowerCase())}</span>`;
+    $("#portal-lede").textContent = `${home ? `${inHome.toLocaleString()} are in ${home} County. ` : ""}Your profile: ${p.kind === "nonprofit" ? "a nonprofit" : "a business"}${tradeLabel(p) ? `, ${tradeLabel(p)}` : ""}. Filter the map by job type or county, then see what fits and who can help for free.`;
     $("#portal-tiles").innerHTML = [
-      [p.county === "outside" ? "Nationwide" : `In ${p.county}`, inCounty.length, p.county === "outside" ? "" : "open contracts in your county"],
-      ["In Florida", fl.length, "open contracts in your trade"],
+      [home ? `In ${home}` : "Nationwide", home ? inCounty.length : all.length, "open in your trade"],
+      ["In Florida", fl.length, "open in your trade"],
       ["Nationwide", all.length, `${soon} closing this week`],
       ["Grants for you", (myGrants.length || grants.length), myGrants.length ? "match your trade" : `open to ${grantWho === "nonprofit" ? "nonprofits" : "small businesses"}`],
     ].map(([l, v, s]) => `<div class="card tile"><div class="label">${esc(l)}</div><div class="value">${Number(v).toLocaleString()}</div><div class="sub">${esc(s)}</div></div>`).join("");
 
-    // Florida county heatmap of contracts in their trade.
+    // Florida county heatmap: every open contract for the chosen job type.
     const byCounty = {};
-    for (const r of fl) { const c = countyOf(r[F.CITY], ctx.source(r)); if (c) byCounty[c] = (byCounty[c] || 0) + 1; }
-    const unmapped = fl.filter((r) => !countyOf(r[F.CITY], ctx.source(r))).length;
-    $("#portal-map-sub").textContent = `Contracts in your trade, by county. ${p.county !== "outside" ? `${p.county} is outlined. ` : ""}Click a county to see its contracts.${unmapped ? ` ${unmapped} Florida notice${unmapped === 1 ? " names" : "s name"} no city, so ${unmapped === 1 ? "it is" : "they are"} not on the map.` : ""}`;
+    for (const r of pool) { const c = countyOf(r[F.CITY], ctx.source(r)); if (c) byCounty[c] = (byCounty[c] || 0) + 1; }
+    const unmapped = pool.filter((r) => !countyOf(r[F.CITY], ctx.source(r))).length;
+    $("#portal-map-sub").textContent = `Open contracts for ${tradeName.toLowerCase()}, by county. Click a county to filter.${unmapped ? ` ${unmapped} Florida notice${unmapped === 1 ? " names" : "s name"} no city, so ${unmapped === 1 ? "it is" : "they are"} not on the map.` : ""}`;
     requestAnimationFrame(() => floridaMap($("#portal-map"), byCounty, {
-      selected: countyFilter || (p.county !== "outside" ? p.county : ""),
-      valueLabel: "open contracts in your trade", ariaLabel: "Open contracts in your trade by Florida county",
-      onClick: (c) => { countyFilter = countyFilter === c ? "" : c; render(); $("#portal-list").scrollIntoView({ behavior: "smooth", block: "start" }); },
+      selected: county || home,
+      valueLabel: `open contracts (${tradeName.toLowerCase()})`, ariaLabel: "Open contracts by Florida county",
+      onClick: (c) => { $("#pm-county").value = county === c ? "" : c; render(); $("#portal-list").scrollIntoView({ behavior: "smooth", block: "start" }); },
     }));
 
-    // Best matches: their county first, then South Florida, Florida, nationwide.
-    const pool = countyFilter ? fl.filter((r) => countyOf(r[F.CITY], ctx.source(r)) === countyFilter) : all;
+    // The list follows the map's filters; "My trades" with no county keeps nationwide matches.
+    const listPool = county ? pool.filter((r) => countyOf(r[F.CITY], ctx.source(r)) === county) : trade === "mine" ? all : pool;
     const seen = new Set();
-    const best = [...pool].sort((a, b) => rank(p)(b) - rank(p)(a) || a[F.DUE].localeCompare(b[F.DUE]))
+    const best = [...listPool].sort((a, b) => rank(p)(b) - rank(p)(a) || a[F.DUE].localeCompare(b[F.DUE]))
       .filter((r) => !seen.has(r[F.TITLE]) && seen.add(r[F.TITLE])).slice(0, 8);
-    $("#portal-list-title").textContent = countyFilter ? `Open in ${countyFilter} County` : "Best matches for you";
-    $("#portal-clear").hidden = !countyFilter;
+    $("#portal-list-title").textContent = county ? `Open in ${county} County` : trade === "mine" ? "Best matches for you" : `Open in Florida: ${tradeName}`;
+    $("#portal-clear").hidden = !county;
     const list = $("#portal-list");
-    list.innerHTML = best.length ? best.map(ctx.oppCard).join("") : `<div class="empty">Nothing open in your trade ${countyFilter ? "in " + esc(countyFilter) : "right now"}. Try the agent, or widen your trades in your profile.</div>`;
+    list.innerHTML = best.length ? best.map(ctx.oppCard).join("") : `<div class="empty">Nothing open for ${esc(tradeName.toLowerCase())}${county ? " in " + esc(county) : ""} right now. Try another job type or county.</div>`;
     list.querySelectorAll(".opp").forEach((c) => c.onclick = () => ctx.openDetail(c.dataset.id));
     list.querySelectorAll(".find-co").forEach((b) => b.onclick = (e) => { e.stopPropagation(); ctx.openVendors(b.dataset.id); });
 
@@ -152,7 +176,7 @@ export function initPortal(ctx) {
       .filter((h) => p.county === "outside" ? ["sam", "apex"].includes(h.id) : true).slice(0, 4)
       .map((h) => `<a class="card help-card" href="${esc(h.link)}" target="_blank" rel="noopener"><strong>${esc(h.title)}</strong><span>${esc(h.what)}</span><em>Open ↗</em></a>`).join("");
   }
-  $("#portal-clear").onclick = () => { countyFilter = ""; render(); };
+  $("#portal-clear").onclick = () => { $("#pm-county").value = ""; render(); };
   $("#portal-agent").onclick = () => { $("#agent-input").value = profileToText(profile); document.querySelector("[data-tab=agent]").click(); };
 
   return {
