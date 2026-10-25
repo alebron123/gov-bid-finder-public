@@ -1,9 +1,9 @@
-import { hbar, vbar, line, card, fmt, usd, stateMap, tileMap, calendarHeat } from "./charts.js?v=4";
+import { hbar, vbar, line, card, fmt, usd, stateMap, floridaMap, calendarHeat } from "./charts.js?v=5";
 import { localISODate, addDaysISO, daysBetween, isSetAside, countOpen, liveRenewals, recentMonths, coverageSkewed, emailText } from "./lib.js?v=3";
 import { initAgent } from "./agent.js?v=5";
-import { initPortal } from "./portal.js?v=2";
+import { initPortal } from "./portal.js?v=3";
 import { initGrants } from "./grants.js?v=1";
-import { FL_COUNTIES, countyOf } from "./florida.js?v=1";
+import { countyOf } from "./florida.js?v=1";
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -208,7 +208,7 @@ function renderDashboard() {
   for (const r of flRows) { const c = countyOf(r[F.CITY], source(r)); if (c) byCounty[c] = (byCounty[c] || 0) + 1; }
   const miami = byCounty["Miami-Dade"] || 0;
   add("Florida, county by county", `${flRows.length.toLocaleString()} open in Florida, ${miami} in Miami-Dade (outlined). Military bases put the Panhandle and Space Coast on the map.`, (el) =>
-    tileMap(el, byCounty, FL_COUNTIES, { selected: "Miami-Dade", names: Object.fromEntries(Object.keys(FL_COUNTIES).map((k) => [k, `${k} County`])), maxTile: 40, ariaLabel: "Open notices by Florida county" }), heat);
+    floridaMap(el, byCounty, { selected: "Miami-Dade", ariaLabel: "Open notices by Florida county" }), heat);
   const byDay = {};
   for (const r of rows) byDay[r[F.DUE]] = (byDay[r[F.DUE]] || 0) + 1;
   const days = Number($("#d-days").value) || 90;

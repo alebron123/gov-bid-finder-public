@@ -30,3 +30,12 @@ test("every county the lookup returns has a tile", () => {
   for (const c of SOUTH_FLORIDA) assert.ok(FL_COUNTIES[c], c);
   for (const city of ["miami", "tampa", "orlando", "jacksonville", "pensacola", "key west", "naples", "gainesville"]) assert.ok(FL_COUNTIES[countyOf(city)], city);
 });
+
+test("every county and state has a map outline with a label point", async () => {
+  const { FL_SHAPES, US_SHAPES } = await import("../geo.js");
+  for (const c of Object.keys(FL_COUNTIES)) {
+    assert.ok(FL_SHAPES[c]?.d.startsWith("M"), `${c} has a path`);
+    assert.equal(FL_SHAPES[c].c.length, 2, `${c} has a label point`);
+  }
+  for (const s of ["FL", "TX", "CA", "NY", "DC", "AK", "HI"]) assert.ok(US_SHAPES[s]?.d, s);
+});

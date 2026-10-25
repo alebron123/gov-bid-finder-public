@@ -5,8 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Gov Bid Finder</title>
 <meta name="description" content="Search every open US federal and Florida state contract opportunity in one place.">
-<link rel="stylesheet" href="./styles.css?v=1792604000">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='11' fill='%232a78d6'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..700&family=Hanken+Grotesk:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="./styles.css?v=1792940000">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='11' fill='%23d3b27a'/></svg>">
 </head>
 <body>
 <header class="top">
@@ -69,9 +72,9 @@
 
   <section class="panel active" id="panel-dashboard">
     <div class="hero hero-main">
-      <p class="eyebrow"><span class="live-dot"></span> Built for Miami: Miami-Dade County, State of Florida and federal bids in one place</p>
+      <p class="eyebrow"><span class="live-dot"></span> Agents for Access · Built for Miami · County, state and federal bids in one place</p>
       <h1>Governments buy ordinary things.<br><span class="accent">Almost nobody bids.</span></h1>
-      <p class="lede">Painting, landscaping, janitorial, IT support, catering, repairs. Every contract here is open right now, and most will draw only a handful of bidders. Pick a trade and see what is up for grabs.</p>
+      <p class="lede">Painting, landscaping, janitorial, IT support, catering, repairs. Every contract here is open right now, and most will draw only a handful of bidders. The tools that find them cost thousands a year and speak only bureaucratic English. govbid is free, and its agent answers in English, Spanish or Haitian Creole.</p>
       <div class="trade-chips" id="trade-chips">
         <!-- WHY word stems ("roof", "landscap"): search is substring match, so the stem
              also catches "roofs", "roof replacement", "landscape maintenance". -->
@@ -116,6 +119,7 @@
         <textarea id="agent-input">We're an 8-person general contractor in Miami, FL: renovations, concrete walkways, pool and splashpad repairs. Registered small business, no special certifications. Jobs up to about $500k. Find us something we can win.</textarea>
         <div class="agent-examples" id="agent-examples">
           <span class="small muted">Try:</span>
+          <button type="button" data-text="Somos una empresa de construcción de 8 personas en Hialeah, FL: renovaciones, aceras de concreto y reparación de piscinas. Pequeña empresa registrada, sin certificaciones. Trabajos de hasta $500 mil. ¿Qué contratos podemos ganar?">En español</button>
           <button type="button" data-text="We're a 6-person commercial painting company in Miami, FL. Registered small business, no special certifications. Jobs up to about $250k. Find us something we can win.">Painter in Miami</button>
           <button type="button" data-text="HVAC repair and maintenance shop in Hialeah, FL. 12 employees, small business, can handle jobs up to $500k.">HVAC in Hialeah</button>
           <button type="button" data-text="Janitorial and custodial crew based in Fort Lauderdale, FL. Women-owned small business (WOSB certified). 20 cleaners. Contracts up to $300k a year.">Janitorial, WOSB</button>
@@ -383,6 +387,6 @@
   </div>
 </dialog>
 <div class="tooltip" id="tip"></div>
-<script type="module" src="./app.js?v=1792933900"></script>
+<script type="module" src="./app.js?v=1792940000"></script>
 </body>
 </html>

@@ -4,7 +4,7 @@
 // free local help that fits.
 import { TRADES, CERTS, profileStems, stemMatcher, setAsideAllowed, profileToText, filterGrants } from "./lib.js?v=3";
 import { FL_COUNTIES, countyOf, SOUTH_FLORIDA } from "./florida.js?v=1";
-import { tileMap } from "./charts.js?v=4";
+import { floridaMap } from "./charts.js?v=5";
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -126,9 +126,9 @@ export function initPortal(ctx) {
     for (const r of fl) { const c = countyOf(r[F.CITY], ctx.source(r)); if (c) byCounty[c] = (byCounty[c] || 0) + 1; }
     const unmapped = fl.filter((r) => !countyOf(r[F.CITY], ctx.source(r))).length;
     $("#portal-map-sub").textContent = `Contracts in your trade, by county. ${p.county !== "outside" ? `${p.county} is outlined. ` : ""}Click a county to see its contracts.${unmapped ? ` ${unmapped} Florida notice${unmapped === 1 ? " names" : "s name"} no city, so ${unmapped === 1 ? "it is" : "they are"} not on the map.` : ""}`;
-    requestAnimationFrame(() => tileMap($("#portal-map"), byCounty, FL_COUNTIES, {
-      selected: countyFilter || (p.county !== "outside" ? p.county : ""), names: Object.fromEntries(Object.keys(FL_COUNTIES).map((k) => [k, `${k} County`])),
-      valueLabel: "open contracts in your trade", maxTile: 40, ariaLabel: "Open contracts in your trade by Florida county",
+    requestAnimationFrame(() => floridaMap($("#portal-map"), byCounty, {
+      selected: countyFilter || (p.county !== "outside" ? p.county : ""),
+      valueLabel: "open contracts in your trade", ariaLabel: "Open contracts in your trade by Florida county",
       onClick: (c) => { countyFilter = countyFilter === c ? "" : c; render(); $("#portal-list").scrollIntoView({ behavior: "smooth", block: "start" }); },
     }));
 

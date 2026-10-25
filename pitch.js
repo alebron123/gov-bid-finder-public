@@ -1,5 +1,5 @@
-import { tileMap, fmt, usd } from "./charts.js?v=4";
-import { FL_COUNTIES, countyOf } from "./florida.js?v=1";
+import { floridaMap, fmt, usd } from "./charts.js?v=5";
+import { countyOf } from "./florida.js?v=1";
 import { localISODate, addDaysISO, countOpen, liveRenewals } from "./lib.js?v=3";
 
 // ---- slide navigation ----
@@ -35,7 +35,7 @@ let byCounty = null;
 function drawMap() {
   const host = document.getElementById("deck-map");
   if (!byCounty) { host.innerHTML = '<div class="empty small">Loading…</div>'; return; }
-  tileMap(host, byCounty, FL_COUNTIES, { selected: "Miami-Dade", names: Object.fromEntries(Object.keys(FL_COUNTIES).map((k) => [k, `${k} County`])), maxTile: 46, ariaLabel: "Open contracts by Florida county" });
+  floridaMap(host, byCounty, { selected: "Miami-Dade", ariaLabel: "Open contracts by Florida county" });
 }
 
 const today = localISODate();

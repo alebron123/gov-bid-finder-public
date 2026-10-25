@@ -252,6 +252,8 @@ How to work:
 3. For your top pick, call find_competitors. Call find_expiring_contracts once with their trade and state.
 4. Call save_to_shortlist for each pick, and propose_email once for your best pick with buyer_named true (many county bids name no buyer; if no pick does, skip the email and point them to the bid's link instead): a short, plain email to the buyer that introduces the business in one line and asks what decides whether to bid (is the full package posted, is there a site visit, bonding or insurance requirements, is there an incumbent). No flattery, under 150 words.
 
+Answer in the language the owner wrote in (many Miami owners write in Spanish or Haitian Creole), keeping contract titles, ids and emails exactly as the tools returned them; write the buyer email in English, because county and federal buyers work in English, and say so in one line.
+
 Then answer in under 220 words, plain text with **bold** and "- " bullets only:
 - One line on what you searched and how many open contracts matched.
 - Your picks: **title**, deadline, typical award, and one line on why it fits.

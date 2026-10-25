@@ -1,6 +1,7 @@
 // Small SVG chart set. One series per chart -> categorical slot 1; hover tooltip on every mark;
 // selective direct labels; hairline recessive grid. No dual axes, no value-ramp on nominal bars.
 const NS = "http://www.w3.org/2000/svg";
+import { FL_SHAPES, FL_COAST, FL_VIEW, US_SHAPES, US_VIEW } from "./geo.js?v=1";
 const tip = () => document.getElementById("tip");
 
 function el(name, attrs = {}, parent) {
@@ -124,48 +125,49 @@ function heatLegend(host, lo, hi, label) {
   host.appendChild(d);
 }
 
-// Tile-grid US map: every state the same size, so small states (DC, RI, DE) stay
-// visible and clickable. [col, row] on an 11 x 8 grid.
-const TILE = {
-  AK: [0, 0], ME: [10, 0], VT: [9, 1], NH: [10, 1],
-  WA: [0, 2], ID: [1, 2], MT: [2, 2], ND: [3, 2], MN: [4, 2], IL: [5, 2], WI: [6, 2], MI: [7, 2], NY: [8, 2], RI: [9, 2], MA: [10, 2],
-  OR: [0, 3], NV: [1, 3], WY: [2, 3], SD: [3, 3], IA: [4, 3], IN: [5, 3], OH: [6, 3], PA: [7, 3], NJ: [8, 3], CT: [9, 3],
-  CA: [0, 4], UT: [1, 4], CO: [2, 4], NE: [3, 4], MO: [4, 4], KY: [5, 4], WV: [6, 4], VA: [7, 4], MD: [8, 4], DE: [9, 4],
-  AZ: [1, 5], NM: [2, 5], KS: [3, 5], AR: [4, 5], TN: [5, 5], NC: [6, 5], SC: [7, 5], DC: [8, 5],
-  OK: [3, 6], LA: [4, 6], MS: [5, 6], AL: [6, 6], GA: [7, 6],
-  HI: [0, 7], TX: [3, 7], FL: [8, 7], PR: [10, 7],
-};
-// Any tile grid: `tiles` maps a key to [label, col, row]. Used for US states and
-// Florida counties.
-export function tileMap(host, counts, tiles, { selected = "", names = {}, notes = {}, valueLabel = "open notices", onClick = null, maxTile = 54, ariaLabel = "Map" } = {}) {
+// Choropleth on real outlines (geo.js). `shapes` maps a key to { d, c }: an SVG
+// path and a label point in a `view` = [width, height] coordinate space.
+// The selected area is outlined and called out with its count, so the one county
+// or state the viewer cares about reads at a glance even when it is small.
+export function shapeMap(host, counts, shapes, view, { selected = "", names = {}, notes = {}, valueLabel = "open notices", onClick = null, ariaLabel = "Map", water = [], coast = "", calloutAbove = true } = {}) {
   host.innerHTML = "";
-  const cells = Object.values(tiles);
-  const cols = Math.max(...cells.map((t) => t[1])) + 1, rows = Math.max(...cells.map((t) => t[2])) + 1, gap = 4;
-  const w = host.clientWidth || 520;
-  const s = Math.min(maxTile, (w - gap * (cols - 1)) / cols);
-  const svg = el("svg", { viewBox: `0 0 ${cols * (s + gap)} ${rows * (s + gap)}`, role: "img", "aria-label": ariaLabel }, host);
-  svg.style.maxWidth = `${cols * (s + gap)}px`;
-  const bin = quantileBins(Object.keys(tiles).map((k) => counts[k] || 0));
-  for (const [key, [label, c, r]] of Object.entries(tiles)) {
-    const v = counts[key] || 0, b = bin(v);
-    const g = el("g", { class: "map-tile", style: onClick && v ? "cursor:pointer" : "" }, svg);
-    const x = c * (s + gap), y = r * (s + gap);
-    el("rect", { x, y, width: s, height: s, rx: Math.min(6, s / 6), fill: heatFill(b), class: key === selected ? "sel" : "" }, g);
-    const ink = b >= 3 ? "#fff" : "var(--text-primary)";
-    const small = s < 34;
-    const code = el("text", { x: x + s / 2, y: y + s / 2 + (small ? 4 : -2), "text-anchor": "middle", class: "map-code", fill: ink }, g);
-    code.textContent = label;
-    if (small) code.setAttribute("style", `font-size:${Math.max(7, s * 0.3)}px`);
-    else el("text", { x: x + s / 2, y: y + s / 2 + 13, "text-anchor": "middle", class: "map-n", fill: ink }, g).textContent = v ? fmt(v) : "–";
-    hookTip(g, names[key] || key, [`${v.toLocaleString()} ${valueLabel}`, ...(notes[key] ? [notes[key]] : [])]);
-    if (onClick && v) g.addEventListener("click", () => onClick(key));
+  const [W, H] = view;
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": ariaLabel, class: "shape-map" }, host);
+  for (const [x, y, text, anchor = "middle"] of water) el("text", { x, y, "text-anchor": anchor, class: "map-water" }, svg).textContent = text;
+  const bin = quantileBins(Object.keys(shapes).map((k) => counts[k] || 0));
+  const land = el("g", {}, svg);
+  for (const [key, { d }] of Object.entries(shapes)) {
+    const v = counts[key] || 0;
+    const path = el("path", { d, fill: heatFill(bin(v)), class: "map-area" + (onClick && v ? " clickable" : "") }, land);
+    hookTip(path, names[key] || key, [`${v.toLocaleString()} ${valueLabel}`, ...(notes[key] ? [notes[key]] : [])]);
+    if (onClick && v) path.addEventListener("click", () => onClick(key));
   }
-  const vals = Object.keys(tiles).map((k) => counts[k] || 0).filter((v) => v > 0);
+  if (coast) el("path", { d: coast, class: "map-coast", fill: "none" }, svg);
+  const sel = shapes[selected];
+  if (sel) {
+    // WHY drawn last: an outline under its neighbours would be half hidden.
+    el("path", { d: sel.d, class: "map-sel", fill: "none" }, svg);
+    const [cx, cy] = sel.c, v = counts[selected] || 0;
+    // WHY 0.72 / 0.28: past those points a centered label would run off the map edge.
+    const anchor = cx > W * 0.72 ? "end" : cx < W * 0.28 ? "start" : "middle";
+    const ty = calloutAbove ? Math.max(30, cy - 64) : Math.min(H - 8, cy + 64);
+    el("line", { x1: cx, y1: cy, x2: cx, y2: ty + (calloutAbove ? 8 : -24), class: "map-leader" }, svg);
+    el("circle", { cx, cy, r: 3.5, class: "map-pin" }, svg);
+    const t = el("text", { x: cx, y: ty, "text-anchor": anchor, class: "map-callout" }, svg);
+    el("tspan", { class: "map-callout-n" }, t).textContent = v.toLocaleString();
+    el("tspan", { dx: 6 }, t).textContent = (names[selected] || selected).replace(/ County$/, "");
+  }
+  const vals = Object.keys(shapes).map((k) => counts[k] || 0).filter((v) => v > 0);
   if (vals.length) heatLegend(host, Math.min(...vals), Math.max(...vals), "Fewer");
 }
 
-const STATE_TILES = Object.fromEntries(Object.entries(TILE).map(([k, [c, r]]) => [k, [k, c, r]]));
-export const stateMap = (host, counts, opts = {}) => tileMap(host, counts, STATE_TILES, { ariaLabel: "Open notices by state", ...opts });
+const countyNames = Object.fromEntries(Object.keys(FL_SHAPES).map((k) => [k, `${k} County`]));
+// Water labels in Florida map coordinates, placed in open sea beside the coast.
+const FL_WATER = [[150, 300, "Gulf of Mexico"], [585, 150, "Atlantic Ocean", "end"], [150, 520, "Florida Keys", "middle"]];
+export const floridaMap = (host, counts, opts = {}) =>
+  shapeMap(host, counts, FL_SHAPES, FL_VIEW, { names: countyNames, coast: FL_COAST, water: FL_WATER, ariaLabel: "Florida counties", ...opts });
+export const stateMap = (host, counts, opts = {}) =>
+  shapeMap(host, counts, US_SHAPES, US_VIEW, { ariaLabel: "Open notices by state", calloutAbove: false, ...opts });
 
 // Calendar heatmap: one square per day, weeks as columns, so crowded deadline days
 // stand out the way they would on a wall calendar.
