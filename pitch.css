@@ -1,0 +1,47 @@
+/* Pitch deck: one full-screen slide at a time, built on the app's tokens. */
+body.deck{min-height:100vh;overflow-x:hidden}
+.progress{position:fixed;top:env(safe-area-inset-top,0px);left:0;right:0;height:1px;background:var(--grid);z-index:30}
+.progress span{display:block;height:100%;background:var(--series-1);width:0;transition:width .25s}
+.slide{display:none;min-height:100vh;padding:clamp(28px,7vh,80px) clamp(20px,8vw,120px) 90px;max-width:1280px;margin:0 auto;flex-direction:column;justify-content:center}
+.slide.active{display:flex;animation:rise .35s ease}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.kicker{font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.14em;font-size:12px;font-weight:500;color:var(--series-1);margin:0 0 22px}
+.huge{font-family:var(--font-display);font-size:clamp(72px,15vw,200px);line-height:.9;letter-spacing:-0.035em;font-weight:500;margin:0 0 28px}
+.slide h2{font-family:var(--font-display);font-size:clamp(34px,5.2vw,72px);line-height:1.02;letter-spacing:-0.02em;font-weight:500;margin:0 0 34px;max-width:20ch}
+.accent{color:var(--series-1)}
+.big{font-size:clamp(17px,2vw,24px);line-height:1.45;max-width:900px;margin:0 0 16px}
+.foot{position:absolute;bottom:76px;color:var(--muted);font-size:13px}
+.slide{position:relative}
+kbd{border:1px solid var(--border);border-bottom-width:2px;border-radius:5px;padding:0 6px;font-family:inherit}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin:0 0 28px}
+.stats div{border-top:1px solid var(--series-1);padding:18px 0 0}
+.stats b{display:block;font-family:var(--font-display);font-size:clamp(40px,5vw,68px);letter-spacing:-0.02em;line-height:1;font-weight:500;font-variant-numeric:lining-nums tabular-nums;margin-bottom:8px}
+.stats span{color:var(--text-secondary);font-size:15px}
+.flow{list-style:none;padding:0;margin:0 0 26px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;counter-reset:f}
+.flow li{border-top:1px solid var(--axis);padding:18px 0 0;counter-increment:f;position:relative}
+.flow li::before{content:counter(f, decimal-leading-zero);position:absolute;top:18px;right:0;font-family:var(--font-mono);font-size:12px;color:var(--series-1)}
+.flow b{display:block;font-family:var(--font-display);font-weight:500;font-size:26px;margin-bottom:8px}
+.flow span{color:var(--text-secondary);font-size:15.5px;line-height:1.45}
+.flow em{font-style:normal;font-weight:650;color:var(--text-primary)}
+.demo-steps li::marker{color:var(--series-1);font-family:var(--font-mono);font-size:.7em}
+.demo-steps{font-size:clamp(18px,2.1vw,26px);line-height:1.7;margin:0 0 28px;padding-left:1.3em}
+.tiers{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin:0 0 22px}
+.tiers .card{padding:24px 26px}
+.tiers .card.paid{border:1px solid var(--series-1);background:linear-gradient(180deg,var(--glow),transparent 160px),var(--surface-1)}
+.tiers h3{font-family:var(--font-display);font-weight:500;font-size:28px;margin:10px 0 8px}
+.tiers p{color:var(--text-secondary);font-size:15.5px;margin:0}
+.badge{font-family:var(--font-mono);font-size:11px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--series-1)}
+.badge.free{color:var(--good)}
+.map-card{padding:22px;max-width:760px}
+/* WHY: the map is taller than wide, so on a laptop it ran past the fold and cut off the Keys. */
+.map-card .shape-map{max-height:62vh}
+.deck-nav{position:fixed;bottom:calc(18px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);display:flex;gap:10px;align-items:center;background:color-mix(in srgb,var(--surface-1) 85%,transparent);backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:999px;padding:6px 12px;z-index:30}
+.deck-nav a{text-decoration:none;font-size:13px}
+@media (max-width:760px){
+  .slide{padding:40px 18px 100px}
+  .foot{bottom:84px}
+}
+@media print{
+  .deck-nav,.progress{display:none}
+  .slide{display:flex !important;page-break-after:always;min-height:100vh}
+}

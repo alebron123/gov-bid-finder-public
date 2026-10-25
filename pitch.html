@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>govbid Pitch</title>
+<meta name="description" content="A five-minute pitch for govbid, an AI agent that finds government contracts for Miami's small businesses.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400..700&family=Hanken+Grotesk:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="./styles.css?v=1792944001">
+<link rel="stylesheet" href="./pitch.css?v=5">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='11' fill='%236fa8ff'/></svg>">
+</head>
+<body class="deck">
+<div class="progress"><span id="progress"></span></div>
+
+<section class="slide active" data-title="Title">
+  <p class="kicker">Impact Miami 2.0 · Track 01 · Agents for Access</p>
+  <h1 class="huge">govbid</h1>
+  <p class="big">An AI agent that finds government contracts and grants for Miami's small businesses and community groups, and makes the first move for them.</p>
+  <p class="foot">Press <kbd>→</kbd> or click to advance</p>
+</section>
+
+<section class="slide" data-title="Problem">
+  <p class="kicker">Who is locked out</p>
+  <h2>Governments buy ordinary things.<br><span class="accent">Almost nobody bids.</span></h2>
+  <div class="stats">
+    <div><b data-stat="open">…</b><span>government contracts open right now</span></div>
+    <div><b data-stat="median">…</b><span>typical award in those industries</span></div>
+    <div><b>$1.4k–29k</b><span>a year for the tools that find them</span></div>
+  </div>
+  <p class="big muted">Painting, landscaping, janitorial, roofing, catering. The work is ordinary. Finding it is not. Every notice is a wall of paperwork on a different website, and the search tools are priced for companies that already have a bid team.</p>
+</section>
+
+<section class="slide" data-title="Miami">
+  <p class="kicker">Why Miami</p>
+  <h2>The money is here. The bidders aren't.</h2>
+  <div class="stats">
+    <div><b data-stat="mdcBids">…</b><span>Miami-Dade County bids open right now, live from the county</span></div>
+    <div><b data-stat="fl">…</b><span>open government contracts with work in Florida</span></div>
+    <div><b data-stat="flRenewValue">…</b><span>in Florida federal contracts expiring within a year</span></div>
+    <div><b data-stat="grants">…</b><span>federal grants open to small businesses and nonprofits</span></div>
+  </div>
+  <p class="big muted">Parks pool repairs, a fire station's doors, a summer food program: this is ordinary work a Miami firm can do. The county even names the buyer on work it plans to buy. Most small businesses never see it.</p>
+</section>
+
+<section class="slide" data-title="Map">
+  <p class="kicker">Where the work is</p>
+  <h2>Florida, county by county</h2>
+  <div class="card map-card"><div class="plot" id="deck-map"></div></div>
+</section>
+
+<section class="slide" data-title="Agent">
+  <p class="kicker">What we built</p>
+  <h2>An agent that does the legwork</h2>
+  <ol class="flow">
+    <li><b>Listen</b><span>A five-question welcome quiz, or one plain sentence: trade, county, size, certifications.</span></li>
+    <li><b>Search &amp; read</b><span>Their county first, then Florida: <em data-stat="open">…</em> open contracts and <em data-stat="grants">…</em> grants. It reads the promising ones and rules out set-asides they can't bid on.</span></li>
+    <li><b>Check the field</b><span>It sees who already wins this work among <em data-stat="companies">…</em> companies, and which contracts expire soon.</span></li>
+    <li><b>Act, with approval</b><span>It saves its picks and drafts the email to the buyer. The owner approves, and it lands in their Gmail as a draft.</span></li>
+  </ol>
+  <p class="big muted">Claude decides which tools to call and in what order. The page shows every step it takes, and nothing leaves without a person's click.</p>
+</section>
+
+<section class="slide" data-title="Tech">
+  <p class="kicker">How it's built</p>
+  <h2>Claude does the reasoning. Public data does the rest.</h2>
+  <ol class="flow">
+    <li><b>Live public data</b><span>Every open federal notice from the SAM.gov daily extract, Miami-Dade County's own bid feeds, Florida state solicitations, Grants.gov, and USAspending award history.</span></li>
+    <li><b>An agent with 7 tools</b><span>Claude decides which to call: search contracts, read one, find competitors, find expiring work, search grants, save to the shortlist, propose an email.</span></li>
+    <li><b>Action, with approval</b><span>The buyer email lands in the owner's Gmail as a draft through Claude's Gmail connector, only after they click.</span></li>
+    <li><b>Text it</b><span>Owners can text their personal AI agent. It writes the question to a shared Google Doc, and govbid answers there within five minutes.</span></li>
+  </ol>
+  <p class="big muted">Plain JavaScript, no framework. 33 automated tests. Map outlines drawn from US Census boundaries.</p>
+</section>
+
+<section class="slide" data-title="Demo">
+  <p class="kicker">Live demo</p>
+  <h2>A Miami contractor asks the agent for work.</h2>
+  <ol class="demo-steps">
+    <li>Type the business in one sentence</li>
+    <li>Watch it <b>search, read and compare</b>, live</li>
+    <li>It saves its <b>top picks</b> and drafts the <b>buyer email</b></li>
+    <li>Approve, and the draft lands in <b>Gmail</b></li>
+  </ol>
+  <a class="btn lg" href="./#agent">Open the agent</a>
+</section>
+
+<section class="slide" data-title="Business">
+  <p class="kicker">Business model</p>
+  <h2>Search is free. The agent working for you is not.</h2>
+  <div class="tiers">
+    <div class="card"><span class="badge free">Free</span><h3>Search everything</h3><p>Public data stays public. Anyone can search, map and track contracts. This is how people find us.</p></div>
+    <div class="card paid"><span class="badge">$99 / month</span><h3>The agent works for you</h3><p>Matched contracts in your trade every week, written questions and bid paperwork drafted for you to review and send, and a warning before work you could take over expires.</p></div>
+  </div>
+  <p class="muted">A flat subscription, never a cut of the contract: federal rules (FAR 52.203-5) and Miami-Dade and Florida law restrict fees that depend on winning. govbid drafts; the owner approves and sends. We never contact the government, so it is not lobbying. Competitors charge $1,350 to $29,000 a year and sell to companies that already bid. General personal agents like Instinct do errands for anyone; this one does one job, government contracting, for the businesses those tools ignore.</p>
+</section>
+
+<section class="slide" data-title="Rollout">
+  <p class="kicker">How we roll it out</p>
+  <h2>Start by hand. Then let it run.</h2>
+  <ol class="flow three">
+    <li><b>Month 1</b><span>We run the agent ourselves for 10 Miami contractors, review every email, and send them one real contract each. Free.</span></li>
+    <li><b>Month 2–3</b><span>The ones who bid become the first $99 subscribers. We track bids submitted and contracts won.</span></li>
+    <li><b>Then</b><span>Self-serve: a contractor signs up with their trade and zip code, and the agent runs on its own with their approval.</span></li>
+  </ol>
+</section>
+
+<section class="slide" data-title="Impact">
+  <p class="kicker">Impact</p>
+  <h2>We count one thing: <span class="accent">dollars won by local businesses.</span></h2>
+  <p class="big">Every contract a Miami small business wins is public money that stays in Miami: payroll, jobs, and a track record that makes the next bid easier.</p>
+  <p class="big muted">It points every business to free local help: the Florida APEX Accelerator at FIU, Miami-Dade SBE certification, and the county supplier portal. The agent answers in the owner's own language: English, Spanish or Haitian Creole. Next: City of Miami, Miami-Dade schools and Water &amp; Sewer feeds, and texting the agent.</p>
+  <p class="foot">govbid · thank you</p>
+</section>
+
+<nav class="deck-nav">
+  <button class="icon-btn" id="prev" aria-label="Previous slide">←</button>
+  <span id="count" class="small muted"></span>
+  <button class="icon-btn" id="next" aria-label="Next slide">→</button>
+  <a class="icon-btn" href="./">Back to app</a>
+</nav>
+<div class="tooltip" id="tip"></div>
+<script type="module" src="./pitch.js?v=7"></script>
+</body>
+</html>

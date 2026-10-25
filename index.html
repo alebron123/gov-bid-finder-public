@@ -3,17 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Gov Bid Finder — open US government contract opportunities</title>
+<title>Gov Bid Finder</title>
 <meta name="description" content="Search every open US federal and Florida state contract opportunity in one place.">
-<link rel="stylesheet" href="./styles.css?v=1790393670">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='11' fill='%232a78d6'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400..700&family=Hanken+Grotesk:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="./styles.css?v=1792944001">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='11' fill='%236fa8ff'/></svg>">
 </head>
 <body>
 <header class="top">
   <div class="brand"><span class="dot"></span> Gov Bid Finder</div>
   <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="foryou" aria-selected="false">For you</button>
     <button role="tab" data-tab="dashboard" aria-selected="true">Dashboard</button>
+    <button role="tab" data-tab="agent" aria-selected="false" class="tab-agent">Agent <span class="ai-badge">AI</span></button>
     <button role="tab" data-tab="search" aria-selected="false">Search</button>
+    <button role="tab" data-tab="grants" aria-selected="false">Grants</button>
     <button role="tab" data-tab="renewals" aria-selected="false">Renewals</button>
     <button role="tab" data-tab="saved" aria-selected="false">Shortlist</button>
     <button role="tab" data-tab="plan" aria-selected="false">Business plan</button>
@@ -21,14 +27,81 @@
   </nav>
   <div class="spacer"></div>
   <span class="pill" id="pill-data">loading…</span>
+  <a class="btn pitch-btn" href="./pitch.html">Pitch</a>
   <button class="icon-btn" id="theme-toggle" title="Toggle light / dark">◐</button>
 </header>
 
 <main>
+  <section class="panel" id="panel-foryou">
+    <div class="empty" id="portal-empty" hidden>
+      <p style="font-size:17px;margin:0 0 12px">Answer five quick questions and this page fills with contracts, grants and free local help for your business.</p>
+      <button type="button" class="btn lg edit-profile">Start</button>
+    </div>
+    <div id="portal" hidden>
+      <div class="portal-head">
+        <div>
+          <p class="eyebrow"><span class="live-dot"></span> Your portal</p>
+          <h1 id="portal-who">Your business</h1>
+          <p class="lede" id="portal-lede"></p>
+        </div>
+        <div class="portal-head-acts">
+          <button type="button" class="btn lg" id="portal-agent">Have the agent work on this</button>
+          <button type="button" class="btn ghost edit-profile">Edit my answers</button>
+        </div>
+      </div>
+      <div class="grid tiles" id="portal-tiles"></div>
+      <div class="portal-grid">
+        <div class="card">
+          <p class="chart-title">Florida, county by county</p>
+          <p class="chart-sub" id="portal-map-sub"></p>
+          <div class="filters map-filters">
+            <label class="sr-only" for="pm-trade">Job type</label>
+            <select id="pm-trade"><option value="all">All jobs</option><option value="mine">My trades</option></select>
+            <label class="sr-only" for="pm-county">County</label>
+            <select id="pm-county"><option value="">All of Florida</option></select>
+          </div>
+          <div class="plot" id="portal-map"></div>
+        </div>
+        <div class="portal-side">
+          <div class="card">
+            <p class="chart-title">Free help near you</p>
+            <p class="chart-sub">Real local organizations. None of them charge to help you bid.</p>
+            <div class="help-list" id="portal-help"></div>
+          </div>
+        </div>
+      </div>
+      <div class="section-head"><h2 id="portal-list-title">Best matches for you</h2><button type="button" class="btn ghost" id="portal-clear" hidden>Show all of Florida</button></div>
+      <div class="results" id="portal-list"></div>
+      <div class="section-head"><h2>Grants you could apply for</h2><button type="button" class="btn ghost" id="portal-more-grants">See all grants</button></div>
+      <div class="results" id="portal-grants"></div>
+    </div>
+  </section>
+
   <section class="panel active" id="panel-dashboard">
-    <div class="hero" style="padding:26px 4px 20px">
-      <h1>Governments buy ordinary things. Almost nobody bids.</h1>
-      <p class="lede">Painting, landscaping, janitorial, IT support, catering, repairs. Every contract below is open right now, and most will draw a handful of bidders.</p>
+    <div class="hero hero-main">
+      <p class="eyebrow"><span class="live-dot"></span> Agents for Access · Built for Miami · County, state and federal bids in one place</p>
+      <h1>Governments buy ordinary things.<br><span class="accent">Almost nobody bids.</span></h1>
+      <p class="lede">Painting, landscaping, janitorial, IT support, catering, repairs. Every contract here is open right now, and most will draw only a handful of bidders. The tools that find them cost thousands a year and speak only bureaucratic English. govbid is free, and its agent answers in English, Spanish or Haitian Creole.</p>
+      <div class="trade-chips" id="trade-chips">
+        <!-- WHY word stems ("roof", "landscap"): search is substring match, so the stem
+             also catches "roofs", "roof replacement", "landscape maintenance". -->
+        <button data-q="paint">Painting</button>
+        <button data-q="janitor">Janitorial</button>
+        <button data-q="landscap">Landscaping</button>
+        <button data-q="roof">Roofing</button>
+        <button data-q="hvac">HVAC</button>
+        <button data-q="plumb">Plumbing</button>
+        <button data-q="electric">Electrical</button>
+        <button data-q="guard">Security guards</button>
+        <button data-q="food service">Food service</button>
+        <button data-q="construction">Construction</button>
+        <button data-q="repair">Repairs</button>
+      </div>
+      <div class="hero-cta">
+        <button class="btn lg" id="cta-agent">Ask the agent to find work for you</button>
+        <button class="btn ghost lg" id="cta-florida">Show me Florida</button>
+        <a class="btn ghost lg" href="./pitch.html">See the pitch &rarr;</a>
+      </div>
     </div>
     <div class="filters">
       <select id="d-state"><option value="">All states</option></select>
@@ -37,7 +110,46 @@
       <select id="d-days"><option value="">Any deadline</option><option value="7">Closing in 7 days</option><option value="30" selected>Closing in 30 days</option><option value="90">Closing in 90 days</option></select>
     </div>
     <div class="grid tiles" id="tiles"></div>
+    <div class="grid heat" id="heat"></div>
     <div class="grid charts" id="charts"></div>
+  </section>
+
+  <section class="panel" id="panel-agent">
+    <div class="hero" style="padding:22px 4px 14px">
+      <p class="eyebrow"><span class="live-dot"></span> An AI agent that works for one small business</p>
+      <h1 style="font-size:clamp(26px,3.6vw,40px);margin:12px 0 8px">Tell it about your business. It finds the contract and makes the first move.</h1>
+      <p class="lede">It searches every open contract, reads the promising ones, checks who you're up against and what's about to expire, saves its picks to your shortlist, and drafts the email to the buyer. Nothing goes out until you approve it.</p>
+    </div>
+    <div class="agent-grid">
+      <div class="card agent-ask">
+        <label for="agent-input" class="small muted">Your business, in plain words</label>
+        <textarea id="agent-input">We're an 8-person general contractor in Miami, FL: renovations, concrete walkways, pool and splashpad repairs. Registered small business, no special certifications. Jobs up to about $500k. Find us something we can win.</textarea>
+        <div class="agent-examples" id="agent-examples">
+          <span class="small muted">Try:</span>
+          <button type="button" data-text="Somos una empresa de construcción de 8 personas en Hialeah, FL: renovaciones, aceras de concreto y reparación de piscinas. Pequeña empresa registrada, sin certificaciones. Trabajos de hasta $500 mil. ¿Qué contratos podemos ganar?">En español</button>
+          <button type="button" data-text="We're a 6-person commercial painting company in Miami, FL. Registered small business, no special certifications. Jobs up to about $250k. Find us something we can win.">Painter in Miami</button>
+          <button type="button" data-text="HVAC repair and maintenance shop in Hialeah, FL. 12 employees, small business, can handle jobs up to $500k.">HVAC in Hialeah</button>
+          <button type="button" data-text="Janitorial and custodial crew based in Fort Lauderdale, FL. Women-owned small business (WOSB certified). 20 cleaners. Contracts up to $300k a year.">Janitorial, WOSB</button>
+          <button type="button" data-text="Licensed security guard company in Orlando, FL. Service-disabled veteran-owned (SDVOSB). 40 guards.">Security guards, SDVOSB</button>
+          <button type="button" data-text="Landscaping and grounds maintenance company in Homestead, FL. 8 people, trucks and mowers. Small business. Up to $150k.">Landscaping in Homestead</button>
+        </div>
+        <div class="agent-run-row">
+          <button type="button" class="btn lg" id="agent-run">Run the agent</button>
+          <button type="button" class="btn ghost" id="agent-stop" hidden>Stop</button>
+          <label class="small muted agent-deep"><input type="checkbox" id="agent-deep"> Think harder (slower)</label>
+        </div>
+        <div class="small agent-status" id="agent-status" aria-live="polite"></div>
+        <div class="callout small" id="agent-unavailable" hidden>The agent runs on Claude, so it works when this page is opened through its Claude link. Everything else on the site works anywhere.</div>
+      </div>
+      <div class="agent-work" id="agent-work" hidden>
+        <div class="card">
+          <p class="chart-title">What the agent is doing</p>
+          <ol class="agent-log" id="agent-log"></ol>
+        </div>
+        <div class="card agent-answer" id="agent-answer" aria-live="polite"></div>
+        <div id="agent-actions" class="agent-actions"></div>
+      </div>
+    </div>
   </section>
 
   <section class="panel" id="panel-search">
@@ -54,6 +166,33 @@
     <div class="small muted" id="s-count"></div>
     <div class="results" id="s-results"></div>
     <div style="text-align:center;margin-top:16px"><button class="btn ghost" id="s-more" hidden>Load more</button></div>
+  </section>
+
+  <section class="panel" id="panel-grants">
+    <div class="hero" style="padding:22px 4px 14px">
+      <h1 style="font-size:clamp(24px,3.2vw,36px)">Grants you can apply for</h1>
+      <p class="lede">Federal grants open to small businesses, nonprofits and individuals, refreshed daily from Grants.gov. Research grants for labs are hidden unless you ask for them.</p>
+      <details class="callout small how-ranked">
+        <summary><strong>How grants are ordered</strong></summary>
+        <ul>
+          <li><strong>No secret score.</strong> govbid doesn't rate grants or guess your odds. Every grant here is one Grants.gov lists as open, or forecast to open, to the applicant type you pick.</li>
+          <li><strong>Closing soonest</strong> (the default) puts the nearest deadline first, so nothing slips past you. Forecast grants with no deadline yet go last.</li>
+          <li><strong>Largest award</strong> sorts by the most a single grant can pay (its award ceiling). Grants that don't state a ceiling go last.</li>
+          <li><strong>Hidden by default:</strong> lab research grants (NIH codes like R01, plus SBIR/STTR and clinical trials). They make up most federal grants open to small businesses but rarely fit a Miami shop or nonprofit. Untick the box to see them.</li>
+          <li><strong>"Grants for you"</strong> on your portal are the ones whose title or description uses words from your trades, such as "food" or "construction". It's a word match, not a recommendation: read the eligibility on Grants.gov before you apply.</li>
+        </ul>
+      </details>
+    </div>
+    <div class="filters">
+      <input type="search" id="g-q" placeholder="Search: food, housing, youth, workforce, environment…">
+      <select id="g-who"><option value="">Anyone eligible</option><option value="small_business">Small businesses</option><option value="nonprofit">Nonprofits</option><option value="individual">Individuals</option></select>
+      <select id="g-cat"><option value="">All categories</option></select>
+      <select id="g-sort"><option value="closing">Closing soonest</option><option value="amount">Largest award</option></select>
+      <label class="small muted" style="display:flex;align-items:center;gap:5px"><input type="checkbox" id="g-research" checked> Hide research grants</label>
+    </div>
+    <div class="small muted" id="g-count"></div>
+    <div class="results" id="g-list"></div>
+    <div style="text-align:center;margin-top:16px"><button class="btn ghost" id="g-more" hidden>Load more</button></div>
   </section>
 
   <section class="panel" id="panel-renewals">
@@ -133,11 +272,11 @@
         </div>
         <div class="card paid">
           <span class="badge">$99 A MONTH</span>
-          <h3>We do the reaching out</h3>
+          <h3>We do the legwork</h3>
           <div class="price">$99<span style="font-size:14px;font-weight:400;color:var(--text-secondary)">/month</span></div>
           <ul>
-            <li>We contact the buyer for you, in your name</li>
-            <li>We ask the questions that decide whether it is worth bidding: is the package out, is there a site visit, what insurance is required</li>
+            <li>We draft your written questions to the buyer. You review them and send them yourself, through the channel the notice names</li>
+            <li>We draft the questions that decide whether it is worth bidding: is the package out, is there a site visit, what insurance is required</li>
             <li>Several contracts brought to you every month, not one when we happen to notice</li>
             <li>Warning when a contract you could take over is about to expire</li>
             <li>Cancel any month</li>
@@ -148,6 +287,13 @@
     </div></div>
 
     <div class="step"><div class="step-n">5</div><div class="step-b">
+      <h2>What is public, and what stays ours</h2>
+      <p><strong>Public and free: the search.</strong> Every contract, the map, the deadline calendar, the renewal calendar. The data is already public on SAM.gov, so charging for it means competing with free. Keeping it open is how contractors find us, and it is the live demo of what we can do.</p>
+      <p><strong>Ours: the matching and the outreach.</strong> Which companies fit which contract, their contact details, every email sent and every reply. That list improves with each email and is the part nobody can copy from SAM.gov.</p>
+      <p><strong>Paid: the agent working for one company.</strong> We start by running it ourselves for the first ten Miami contractors, reviewing every email before it goes out. Self-serve sign-up comes after we know which emails get replies.</p>
+    </div></div>
+
+    <div class="step"><div class="step-n">6</div><div class="step-b">
       <h2>What the numbers have to look like</h2>
       <div class="card" style="margin-top:10px">
         <table class="data">
@@ -158,13 +304,13 @@
       </div>
     </div></div>
 
-    <div class="step"><div class="step-n">6</div><div class="step-b">
+    <div class="step"><div class="step-n">7</div><div class="step-b">
       <h2>Why this is defensible</h2>
       <p>Federal contract data is free, so nobody can build a business on it alone. The moat is the local data: Miami-Dade County, the City of Miami, the school district, the water and sewer department. Each has its own portal and no bulk download, which is exactly why nobody aggregates them. It is tedious, and tedious is what automation is for.</p>
       <p>The second moat is the renewal calendar. Knowing a contract expires in eight months is worth more than knowing one closes on Friday, because eight months is enough time to prepare. Nobody sells that to small contractors.</p>
     </div></div>
 
-    <div class="step"><div class="step-n">7</div><div class="step-b">
+    <div class="step"><div class="step-n">8</div><div class="step-b">
       <h2>Who we are competing with</h2>
       <p>GovWin from Deltek costs about $29,000 a year and serves roughly 5,800 customers. GovSpend runs $7,300 to $24,500. GovTribe starts at $1,350. All of them are built for companies that already bid and have someone whose job is bidding.</p>
       <p>In three months of award data, more than ten thousand different companies won federal work, and the median one took about $500,000. Hundreds of thousands more are registered and never win anything. Nobody serves them, because a $29,000 product cannot be sold to a roofer. That gap is the business.</p>
@@ -192,17 +338,18 @@
         </div>
         <div class="card paid">
           <span class="badge">$99 A MONTH</span>
-          <h3>We do the reaching out</h3>
+          <h3>We do the legwork</h3>
           <div class="price">$99<span style="font-size:14px;font-weight:400;color:var(--text-secondary)">/month</span></div>
           <ul>
-            <li>We contact the buyer for you, in your name</li>
+            <li>We draft your written questions to the buyer. You review them and send them yourself, through the channel the notice names</li>
             <li>Several contracts brought to you every month</li>
             <li>Warning before a contract you could take over expires</li>
           </ul>
         </div>
       </div>
-      <p class="small muted" style="margin-top:14px">Searching is free because the data is public and should be. The paid tier is the work on top of it: contacting buyers on your behalf and keeping a steady flow of contracts coming to you. See the <a href="#" onclick="document.querySelector('[data-tab=plan]').click();return false">business plan</a> for the detail.</p>
+      <p class="small muted" style="margin-top:14px">Searching is free because the data is public and should be. The paid tier is the work on top of it: drafting your questions and bid paperwork for you to review and send, and keeping a steady flow of contracts coming to you. See the <a href="#" onclick="document.querySelector('[data-tab=plan]').click();return false">business plan</a> for the detail.</p>
       <p class="small muted">Source data is public. Always verify against the official notice before bidding.</p>
+      <p class="small muted"><strong>govbid is not affiliated with any government agency.</strong> We never contact a government buyer for you, never submit bids or sign certifications, and never charge for registration, which is always free on SAM.gov and the county portal. In Miami-Dade, the Cone of Silence bars spoken contact about an advertised bid: questions go in writing to the contact the notice names.</p>
     </div>
   </section>
 </main>
@@ -215,7 +362,49 @@
   </div>
   <div class="dlg-body" id="dlg-body"></div>
 </dialog>
+<dialog id="quiz" aria-labelledby="quiz-title">
+  <div class="quiz">
+    <div class="quiz-top"><span class="brand"><span class="dot"></span> govbid</span><div class="q-progress" id="q-progress"></div><button type="button" class="icon-btn" id="q-skip">Skip</button></div>
+    <section class="q-step">
+      <h2 id="quiz-title">Welcome. Who are you?</h2>
+      <p class="muted">Five quick questions, and we'll show you the public contracts, grants and free help that fit. Your answers stay in this browser.</p>
+      <div class="q-cards">
+        <label class="q-card"><input type="radio" name="q-kind" value="business" checked><strong>A small business</strong><span>I want government contracts</span></label>
+        <label class="q-card"><input type="radio" name="q-kind" value="nonprofit"><strong>A nonprofit or community group</strong><span>I want grants and contracts</span></label>
+        <label class="q-card"><input type="radio" name="q-kind" value="exploring"><strong>Just exploring</strong><span>Show me what's out there</span></label>
+      </div>
+    </section>
+    <section class="q-step" hidden>
+      <h2>What kind of work do you do?</h2>
+      <p class="muted">Pick everything that fits.</p>
+      <div class="q-picks" id="q-trades"></div>
+      <label for="q-other" class="small muted">Something else?</label>
+      <input id="q-other" placeholder="e.g. pressure washing, signage, tutoring">
+    </section>
+    <section class="q-step" hidden>
+      <h2>Where are you based?</h2>
+      <p class="muted">We show work in your county first, then South Florida, then the rest of the state.</p>
+      <select id="q-county" class="q-select" aria-label="County"></select>
+    </section>
+    <section class="q-step" hidden>
+      <h2>How big are you?</h2>
+      <div class="q-row">
+        <label for="q-size">People on the team</label>
+        <select id="q-size" class="q-select"><option value="">Choose</option><option>1-5</option><option>6-20</option><option>21-100</option><option>100+</option></select>
+        <label for="q-maxjob">Biggest job you could take on</label>
+        <select id="q-maxjob" class="q-select"><option value="">Choose</option><option value="25000">About $25,000</option><option value="100000">About $100,000</option><option value="500000">About $500,000</option><option value="2000000">$2 million or more</option></select>
+      </div>
+    </section>
+    <section class="q-step" hidden>
+      <h2>Any certifications?</h2>
+      <p class="muted">Some contracts are reserved for certified firms. None yet is fine: we'll show you how to get certified for free.</p>
+      <div class="q-picks" id="q-certs"></div>
+    </section>
+    <div class="q-hint small" id="q-hint" aria-live="polite"></div>
+    <div class="quiz-nav"><button type="button" class="btn ghost" id="q-back" hidden>Back</button><button type="button" class="btn lg" id="q-next">Next</button></div>
+  </div>
+</dialog>
 <div class="tooltip" id="tip"></div>
-<script type="module" src="./app.js?v=1790393670"></script>
+<script type="module" src="./app.js?v=1792944002"></script>
 </body>
 </html>
