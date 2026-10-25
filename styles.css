@@ -1,23 +1,23 @@
-/* govbid · "Biscayne at night"
+/* govbid · "Biscayne at midnight"
    Layout: a quiet editorial frame (Bodoni headlines, generous air, hairline rules)
    around a working instrument (tabular figures, mono bid numbers, the county map).
-   Dark first: bay-ink ground, ivory type, champagne brass for the one accent.
-   Light: coral-rock limestone, the pale stone Miami is built on. */
+   Dark first: midnight-navy ground, cool ivory type, azure for the one accent.
+   Light: pale ice ground with deep sapphire. Coral marks deadlines and selection. */
 :root{
   color-scheme: dark;
-  --page:#0a1113;          /* Biscayne Bay after dark, a green-blue ink */
-  --surface-1:#111a1d;     /* raised panels */
-  --surface-2:#172226;     /* inputs, wells */
-  --text-primary:#f1ece2;  /* ivory, warm against the cool ground */
-  --text-secondary:#a9b3af;
-  --muted:#76837f;
-  --grid:#1c282b; --axis:#33423f; --border:rgba(241,236,226,0.09);
-  --series-1:#d3b27a;      /* champagne brass: the accent, used sparingly */
-  --on-accent:#0a1113;
-  --series-2:#e9826a;      /* coral: deadlines and the selected county */
-  --series-3:#7fbfae;      /* sea glass: set-asides, good news */
-  --good:#7fbfae; --warning:#e6b45c; --serious:#e9826a; --critical:#f06a5a;
-  --glow:rgba(211,178,122,0.10);
+  --page:#070d1a;          /* Biscayne Bay at midnight, a deep navy */
+  --surface-1:#0d1526;     /* raised panels */
+  --surface-2:#131d33;     /* inputs, wells */
+  --text-primary:#eef2f8;  /* cool ivory */
+  --text-secondary:#a7b2c6;
+  --muted:#6f7c94;
+  --grid:#18223a; --axis:#2c3a58; --border:rgba(238,242,248,0.09);
+  --series-1:#6fa8ff;      /* azure: the accent, used sparingly */
+  --on-accent:#070d1a;
+  --series-2:#ff8a6b;      /* coral: deadlines and the selected county */
+  --series-3:#7fcfc0;      /* sea glass: set-asides, good news */
+  --good:#7fcfc0; --warning:#f0bc5e; --serious:#ff8a6b; --critical:#ff6b5e;
+  --glow:rgba(111,168,255,0.12);
   --radius:6px;
   --font-display:"Bodoni Moda", "Didot", "Bodoni 72", Georgia, serif;
   --font:"Hanken Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -26,22 +26,22 @@
 @media (prefers-color-scheme: light){
   :root:not([data-theme="dark"]){
     color-scheme: light;
-    --page:#eceee9; --surface-1:#f7f7f3; --surface-2:#e4e7e1;
-    --text-primary:#111a1c; --text-secondary:#47524f; --muted:#77817d;
-    --grid:#dadfd8; --axis:#b5bdb7; --border:rgba(17,26,28,0.11);
-    --series-1:#8a6828; --on-accent:#f7f7f3; --series-2:#bd4f36; --series-3:#2c7a67;
-    --good:#2c7a67; --warning:#a87214; --serious:#bd4f36; --critical:#b8322a;
-    --glow:rgba(138,104,40,0.08);
+    --page:#edf1f7; --surface-1:#f8fafd; --surface-2:#e2e8f1;
+    --text-primary:#0b1428; --text-secondary:#44506a; --muted:#74809a;
+    --grid:#d8dfeb; --axis:#b3bed1; --border:rgba(11,20,40,0.11);
+    --series-1:#1f4fbf; --on-accent:#f8fafd; --series-2:#c4502f; --series-3:#1f7a6a;
+    --good:#1f7a6a; --warning:#a87214; --serious:#c4502f; --critical:#b8322a;
+    --glow:rgba(31,79,191,0.08);
   }
 }
 :root[data-theme="light"]{
   color-scheme: light;
-  --page:#eceee9; --surface-1:#f7f7f3; --surface-2:#e4e7e1;
-  --text-primary:#111a1c; --text-secondary:#47524f; --muted:#77817d;
-  --grid:#dadfd8; --axis:#b5bdb7; --border:rgba(17,26,28,0.11);
-  --series-1:#8a6828; --on-accent:#f7f7f3; --series-2:#bd4f36; --series-3:#2c7a67;
-  --good:#2c7a67; --warning:#a87214; --serious:#bd4f36; --critical:#b8322a;
-  --glow:rgba(138,104,40,0.08);
+  --page:#edf1f7; --surface-1:#f8fafd; --surface-2:#e2e8f1;
+  --text-primary:#0b1428; --text-secondary:#44506a; --muted:#74809a;
+  --grid:#d8dfeb; --axis:#b3bed1; --border:rgba(11,20,40,0.11);
+  --series-1:#1f4fbf; --on-accent:#f8fafd; --series-2:#c4502f; --series-3:#1f7a6a;
+  --good:#1f7a6a; --warning:#a87214; --serious:#c4502f; --critical:#b8322a;
+  --glow:rgba(31,79,191,0.08);
 }
 *{box-sizing:border-box}
 /* WHY: component rules like .agent-work{display:flex} would otherwise beat the
