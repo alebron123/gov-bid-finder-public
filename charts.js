@@ -108,10 +108,10 @@ export function line(host, data, { valueFmt = fmt, valueLabel = "" } = {}) {
   });
 }
 
-// Five shades of series-1 for heatmaps. Quantile breaks, not linear: one state
+// Five shades of --heat (orange, matching the logo) for heatmaps. Quantile breaks, not linear: one state
 // (Maryland, Virginia) would otherwise turn every other state the palest shade.
 const HEAT_MIX = [16, 34, 52, 72, 94];
-const heatFill = (bin) => bin < 0 ? "var(--grid)" : `color-mix(in srgb, var(--series-1) ${HEAT_MIX[bin]}%, var(--surface-1))`;
+const heatFill = (bin) => bin < 0 ? "var(--grid)" : `color-mix(in srgb, var(--heat) ${HEAT_MIX[bin]}%, var(--surface-1))`;
 export function quantileBins(values, n = HEAT_MIX.length) {
   const sorted = values.filter((v) => v > 0).sort((a, b) => a - b);
   if (!sorted.length) return () => -1;

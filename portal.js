@@ -4,7 +4,7 @@
 // free local help that fits.
 import { TRADES, CERTS, profileStems, stemMatcher, setAsideAllowed, profileToText, filterGrants } from "./lib.js?v=3";
 import { FL_COUNTIES, countyOf, SOUTH_FLORIDA } from "./florida.js?v=1";
-import { floridaMap } from "./charts.js?v=7";
+import { floridaMap } from "./charts.js?v=8";
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));

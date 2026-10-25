@@ -13,6 +13,7 @@
   --muted:#6f7c94;
   --grid:#18223a; --axis:#2c3a58; --border:rgba(238,242,248,0.09);
   --series-1:#6fa8ff;      /* azure: the accent, used sparingly */
+  --heat:#ff8a3d;          /* WHY orange: heatmaps share the logo's heat ramp and stand apart from the blue UI */
   --on-accent:#070d1a;
   --series-2:#ff8a6b;      /* coral: deadlines and the selected county */
   --series-3:#7fcfc0;      /* sea glass: set-asides, good news */
@@ -29,7 +30,7 @@
     --page:#edf1f7; --surface-1:#f8fafd; --surface-2:#e2e8f1;
     --text-primary:#0b1428; --text-secondary:#44506a; --muted:#74809a;
     --grid:#d8dfeb; --axis:#b3bed1; --border:rgba(11,20,40,0.11);
-    --series-1:#1f4fbf; --on-accent:#f8fafd; --series-2:#c4502f; --series-3:#1f7a6a;
+    --series-1:#1f4fbf; --heat:#e8510a; --on-accent:#f8fafd; --series-2:#c4502f; --series-3:#1f7a6a;
     --good:#1f7a6a; --warning:#a87214; --serious:#c4502f; --critical:#b8322a;
     --glow:rgba(31,79,191,0.08);
   }
@@ -39,7 +40,7 @@
   --page:#edf1f7; --surface-1:#f8fafd; --surface-2:#e2e8f1;
   --text-primary:#0b1428; --text-secondary:#44506a; --muted:#74809a;
   --grid:#d8dfeb; --axis:#b3bed1; --border:rgba(11,20,40,0.11);
-  --series-1:#1f4fbf; --on-accent:#f8fafd; --series-2:#c4502f; --series-3:#1f7a6a;
+  --series-1:#1f4fbf; --heat:#e8510a; --on-accent:#f8fafd; --series-2:#c4502f; --series-3:#1f7a6a;
   --good:#1f7a6a; --warning:#a87214; --serious:#c4502f; --critical:#b8322a;
   --glow:rgba(31,79,191,0.08);
 }
@@ -179,13 +180,13 @@ a.btn{text-decoration:none}
 .map-area:hover{filter:brightness(1.25)}
 .map-area.clickable{cursor:pointer}
 .map-coast{stroke:var(--axis);stroke-width:.9;stroke-linejoin:round}
-.map-sel{stroke:var(--series-2);stroke-width:1.8;stroke-linejoin:round;pointer-events:none}
-.map-leader{stroke:var(--series-2);stroke-width:1;pointer-events:none}
-.map-pin{fill:var(--series-2);stroke:var(--page);stroke-width:1.5;pointer-events:none}
+.map-sel{stroke:var(--series-1);stroke-width:1.8;stroke-linejoin:round;pointer-events:none}
+.map-leader{stroke:var(--series-1);stroke-width:1;pointer-events:none}
+.map-pin{fill:var(--series-1);stroke:var(--page);stroke-width:1.5;pointer-events:none}
 .map-callout{font-family:var(--font-display);font-size:var(--map-type,17px);fill:var(--text-primary);paint-order:stroke;stroke:var(--surface-1);stroke-width:5px;stroke-linejoin:round;pointer-events:none}
-.map-callout-n{font-weight:600;fill:var(--series-2)}
+.map-callout-n{font-weight:600;fill:var(--series-1)}
 .map-water{font-family:var(--font-display);font-size:calc(var(--map-type,17px) * .88);fill:var(--muted);letter-spacing:.06em;pointer-events:none}
-rect.today{stroke:var(--series-2);stroke-width:1.5}
+rect.today{stroke:var(--series-1);stroke-width:1.5}
 .heat-legend{display:flex;align-items:center;gap:2px;margin-top:14px;font-family:var(--font-mono);font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
 .heat-legend span{margin:0 8px}
 .heat-legend i{width:22px;height:6px;display:block}
