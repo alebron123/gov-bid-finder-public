@@ -33,6 +33,8 @@ kbd{border:1px solid var(--border);border-bottom-width:2px;border-radius:5px;pad
 .badge{font-family:var(--font-mono);font-size:11px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--series-1)}
 .badge.free{color:var(--good)}
 .map-card{padding:22px;max-width:760px}
+/* WHY: the map is taller than wide, so on a laptop it ran past the fold and cut off the Keys. */
+.map-card .shape-map{max-height:62vh}
 .deck-nav{position:fixed;bottom:calc(18px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);display:flex;gap:10px;align-items:center;background:color-mix(in srgb,var(--surface-1) 85%,transparent);backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:999px;padding:6px 12px;z-index:30}
 .deck-nav a{text-decoration:none;font-size:13px}
 @media (max-width:760px){

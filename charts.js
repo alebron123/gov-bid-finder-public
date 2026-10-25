@@ -166,7 +166,7 @@ export function shapeMap(host, counts, shapes, view, { selected = "", names = {}
 
 const countyNames = Object.fromEntries(Object.keys(FL_SHAPES).map((k) => [k, `${k} County`]));
 // Water labels in Florida map coordinates, placed in open sea beside the coast.
-const FL_WATER = [[150, 300, "Gulf of Mexico"], [592, 250, "Atlantic Ocean", "end"], [330, 548, "Florida Keys"]];
+const FL_WATER = [[150, 300, "Gulf of Mexico"], [596, 288, "Atlantic", "end"], [596, 306, "Ocean", "end"], [330, 548, "Florida Keys"]];
 export const floridaMap = (host, counts, opts = {}) =>
   shapeMap(host, counts, FL_SHAPES, FL_VIEW, { names: countyNames, coast: FL_COAST, water: FL_WATER, ariaLabel: "Florida counties", ...opts });
 export const stateMap = (host, counts, opts = {}) =>
