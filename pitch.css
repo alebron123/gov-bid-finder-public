@@ -6,9 +6,9 @@ body.deck{min-height:100vh;overflow-x:hidden}
 .slide.active{display:flex;animation:rise .35s ease}
 @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 .kicker{font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.14em;font-size:12px;font-weight:500;color:var(--series-1);margin:0 0 22px}
-.huge{font-family:var(--font-display);font-style:italic;font-size:clamp(72px,15vw,200px);line-height:.9;letter-spacing:-0.035em;font-weight:500;margin:0 0 28px}
+.huge{font-family:var(--font-display);font-size:clamp(72px,15vw,200px);line-height:.9;letter-spacing:-0.035em;font-weight:500;margin:0 0 28px}
 .slide h2{font-family:var(--font-display);font-size:clamp(34px,5.2vw,72px);line-height:1.02;letter-spacing:-0.02em;font-weight:500;margin:0 0 34px;max-width:20ch}
-.accent{color:var(--series-1);font-style:italic}
+.accent{color:var(--series-1)}
 .big{font-size:clamp(17px,2vw,24px);line-height:1.45;max-width:900px;margin:0 0 16px}
 .foot{position:absolute;bottom:76px;color:var(--muted);font-size:13px}
 .slide{position:relative}
