@@ -1,6 +1,6 @@
 import { hbar, vbar, line, card, fmt, usd, stateMap, tileMap, calendarHeat } from "./charts.js?v=4";
 import { localISODate, addDaysISO, daysBetween, isSetAside, countOpen, liveRenewals, recentMonths, coverageSkewed, emailText } from "./lib.js?v=3";
-import { initAgent } from "./agent.js?v=4";
+import { initAgent } from "./agent.js?v=5";
 import { initPortal } from "./portal.js?v=2";
 import { initGrants } from "./grants.js?v=1";
 import { FL_COUNTIES, countyOf } from "./florida.js?v=1";
